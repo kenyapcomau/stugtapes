@@ -1,0 +1,79 @@
+#-h-  echo.doc          622  local  09/12/80  17:02:42
+.bp 1
+.in 0
+.he 'ECHO (1)'07/07/78'ECHO (1)'
+.fo ''-#-''
+.fi
+.in 7
+.ti -3
+NAME
+.br
+echo - echo command line arguments
+.sp 1
+.ti -3
+SYNOPSIS
+.br
+.bd
+echo
+[arg ...]
+.sp 1
+.ti -3
+DESCRIPTION
+.br
+.bd
+Echo
+writes its arguments in order as a line on the standard output
+file.
+It is useful for producing messages and diagnostics in command
+files
+and for inserting single lines of text into files.
+.sp 1
+.ti -3
+FILES
+.br
+None
+.sp 1
+.ti -3
+SEE ALSO
+.br
+The Unix command 'echo' in the Unix manual
+.sp 1
+.ti -3
+DIAGNOSTICS
+.br
+None
+.sp 1
+.ti -3
+AUTHORS
+.br
+Debbie Scherrer  (Lawrence Berkeley Lab)
+.sp 1
+.ti -3
+BUGS/DEFICIENCIES
+.br
+#-t-  echo.doc          622  local  09/12/80  17:02:42
+#-h-  echo          377  local  09/12/80  17:10:47
+# echo - echo command line arguments
+
+     #   include symbol definitions
+ 
+   DRIVER(echo)
+
+   integer i
+   integer getarg
+
+   character buf (MAXARG)
+
+   call query ("usage:  echo [args].")
+
+   for (i = 1; getarg (i, buf, MAXARG) != EOF; i = i + 1) {
+      if (i != 1)
+         call putch (BLANK, STDOUT)
+      call putlin (buf, STDOUT)
+      }
+   if (i != 1)
+      call putch (NEWLINE, STDOUT)
+
+   DRETURN
+   end
+#-t-  echo          377  local  09/12/80  17:10:47

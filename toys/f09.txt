@@ -1,0 +1,1221 @@
+#-h-  ar.doc                     7901  ascii   07Jan84  13:47:48
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^ar(1)^%^ar(1)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+ar - archive file maintainer
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+ar [-](d|p|t|u|x)[v] [-c[t]] arcname [files]
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+Ar collects sets of arbitrary files into one big file and
+maintains that file as an 'archive'.
+Files can be extracted from the archive, new ones can be added,
+old ones can be deleted or replaced by updated versions, and
+data about the contents can be listed.
+ 
+If a minus sign ('-') is given as a file name, further file names
+are read from the standard input, one file name per line.
+ 
+Files that are to be added to an archive must exist as
+files with the name given.  Files that are extracted from
+an archive will be put onto files with the name given.
+Files that are added to archives can, of course, be archive files
+themselves.  There is no (theoretical) limit to the number
+of files that can be nested this way.
+Thus AR provides the utility necessary to maintain tree-structured
+file directories.
+ 
+AR is invoked by the command line
+.br
+ 
+.ti +10
+AR command archname [optional filenames]
+ 
+where 'command' is any one of 'dptux', optionally concatenated
+with 'v', specifying what operation to perform on the
+archive file named 'archname'.
+The possible commands are:
+.br
+ 
+.in +10
+u - Update named archive by replacing existing files or adding new
+ones at end.
+If the 'v' option is used, file names will be printed on the
+standard output as files are written to the new archived file.
+ 
+x - Extract named files from archive.  Put onto file of the
+same name.
+If the 'v' option is added, file names will be printed on the
+standard output as files are extracted.
+ 
+d - Delete named files from archive.
+If the 'v' option is used, file names will be printed on
+the standard output as they are deleted from the archive.
+ 
+p - Print named files on standard output.
+Using the 'v' option will cause the file name to precede the file.
+ 
+t - Print table of archive contents.
+Normally, the table will contain only the file name.
+If the 'v' option is used, the table will also contain
+the file's character count, type, and date and time of last change.
+ 
+v - Verbose.  This command may be concatenated to any of the above
+commands,
+and will cause the archiver to print additional information,
+generally file names, on the standard output.
+Its specific action for each command has already been described.
+.br
+.in -10
+ 
+The optional filenames in the command line specify individual
+files that may participate in the action.
+If no files are named, the action is done on ALL files in the archive,
+but if any files are explicitly named, they are the ONLY ones that
+take part in the action.
+(The 'd' command is an exception--files may be deleted only by
+specifying their names.)
+.sp
+Normally, the archiver works by surrounding each file with a header
+and a trailer.
+However, for compatibility with the original archiver (by Kernighan-Plauger),
+command line options are available which allow the archiver to work
+by preceding a file by a header which contains its size:
+(The flags may appear anywhere on the command line.)
+.sp
+.in +10
+.ti -5
+-c   Use character counts instead of header/trailer delimiters.
+(This will cause the archiver to work exactly as the original did.)
+ 
+.ti -5
+-ct  Use character counts but also include the header/trailers.
+This will allow archives to work by using either character counts
+or header/trailers.
+.in -10
+.sp
+Binary files are allowed in the top level of an archive.
+However, they can NOT be used in nested archives.
+.ex
+.in +5
+.fi
+.ti -5
+ar u book chap1 chap2 chap3
+.br
+Create an archive file called "book" and insert 3 members into 
+it -- chap1, chap2, and chap3
+.sp
+.ti -5
+ar -xv source rtnA rtnB
+.br
+From the archive file "source", extract the members "rtnA" and "rtnB"
+and put them into files with the same name.
+Print the member names as they are extracted.
+(The minus sign "-" preceding the "xv" is optional.)
+.sp
+.ti -5
+ar t library
+.br
+List all the members of the archive file "library".
+.sp
+.ti -5
+ar p book | format
+.br
+Extract all the members from the archive "book" and send them
+to the formatter.
+.sp
+.ti -5
+ar uv somefile a b c | rm -
+.br
+Update members "a", "b", and "c" in archive file "somefile",
+and then delete them from the file system.
+.sp
+.ti -5
+ar -c uv arc one two three
+.br
+Insert three members into the archive file "arc", using the
+original algorithm of delimited members by maintaining their
+sizes in the header.
+.sp
+.ti -5
+ar uv arc -ct one two three
+.br
+Same as above, only maintain not only the character counts
+but also the header/trailer combinations.
+.in -5
+.fl
+A file 'arctemp' is created and subsequently deleted for each run.
+.sa
+The Unix commands 'ar' and 'ls' in the Unix manual
+.di
+archive not in proper format
+.br
+.in +10
+The basic problem is that archive didn't find a header
+line where one was expected.
+Typical reasons include misspelling the file name,
+using an existing file (not in archive format)
+on a creation run, and
+referencing an archive file that has been modified
+directly (say with the editor).
+.br
+.in -10
+ 
+archive integrity in doubt - missing trailer
+.br
+.in +10
+Each file in an archive is terminated by a special line called a
+"trailer," which must be present.
+The message is caused by the lack of a trailer line when one was
+expected.
+.br
+.in -10
+ 
+ 
+delete by name only
+.br
+.in +10
+For user protection, files are allowed to be deleted from an archive
+only by specifying each file name.
+.br
+.in -10
+ 
+duplicate file name
+.br
+.in +10
+A file was listed more than once when calling the archiver
+.br
+.in -10
+ 
+fatal errors-archive not altered
+.br
+.in +10
+This message is generated whenever one or more of the other
+errors have been detected.  An archive is never altered unless
+EVERYTHING has run properly.
+.br
+.in -10
+ 
+too many file names
+.br
+.in +10
+At the present the user may call the archiver with no more than
+25 files at a time.
+.br
+.in -10
+ 
+usage:  ar [-](dptux)[v] [-c[t]] arcname [files]
+.br
+.in +10
+The command line passed to the archiver is in error.
+Possibly the command is wrong or the archive file name
+has not been given.
+.br
+.in -10
+ 
+'filename': can't add
+.br
+.in +10
+The file specified by 'filename' doesn't exist or can't be
+opened (e. g. is locked).
+.br
+ 
+.in -10
+'filename': can't create
+.br
+.in +10
+The archiver could not generate a local file by the name
+of 'filename'.  Probably the archiver's internal file
+buffer space has been exceeded.
+.br
+ 
+.in -10
+'filename': not in archive
+.br
+.in +10
+The archiver could not locate the file specified by 'filename' in
+the archived file.
+.in -10
+.au
+Original code from Kernighan and Plauger's 'Software Tools',
+with rewrites by Allen Akin (Georgia Institute of Technology),
+Debbie Scherrer (Lawrence Berkeley Laboratory), and
+minor changes suggested by David Hanson (University
+of Arizona).
+.bu
+On some systems only text files can be archived.
+ 
+When the update and print commands are used, the files are
+updated or printed
+in the order they appear on the
+archived file, NOT the order listed on
+the command line.
+ 
+The Unix archiver allows files to be positioned in the
+archive, rather than simply added at the end as AR does.
+This is done by adding the following commands:
+.br
+.in +10
+ 
+m - Move specified files to end of archive
+ 
+ma posname - Move specified files to position after file 'posname'
+ 
+mb posname - Move specified files to position before file 'posname'
+ 
+r - Replace specified files and place at end of archive
+ 
+ra posname - Replace files and place after file 'posname'
+ 
+rb posname - Replace files and place before file 'posname'
+.br
+.in -10
+ 
+There are some discrepancies between the Unix version of AR and
+this version.  Unix uses 'r'--replace instead of 'u'--update.
+Unix also requires the user to specify an additional command 'n'
+when creating an archive.
+
+#-t-  ar.doc                     7901  ascii   07Jan84  13:47:48
+#-h-  ar.inc                     1511  ascii   15-Jan-84  19:52:52
+#-h-  carch                      1377  ascii   15-Jan-84  19:52:38
+#########################################################################
+#			C A R C H 					#
+#########################################################################
+#	Revision History						#
+#	----------------						#
+#	02c 15Jan84 dpm added mbrsiz, filsiz, mbrtyp and filtyp		#
+#			to "carch" common statement; removed		#
+#			typef and sizef.  allows character counting	#
+#			to work correctly.				#
+#	02b 20Dec83 njd	changed typef to mbrtyp,filtyp and		#
+#			sizef to mbrsiz, filsiz				#
+#	02a 03Oct83 sd  replaced old carch, to work with new version 	#
+#			of AR.						#
+#########################################################################
+
+# carch - common blocks for the archiver
+ 
+   common /carch/ fname, fstat, fcount, errcnt, verbos,
+                  chead, mbrtyp, filtyp, mbrsiz, filsiz, ccount, trailers
+ 
+   character fname (FILENAMESIZE, MAXFILES)  # list of archive members
+   integer fstat (MAXFILES)		# mark member when processed
+   integer fcount			# number of members
+   integer errcnt			# running error count
+   integer verbos			# verbose flag
+   character chead (MAXLINE)		# holds current header
+   integer mbrtyp,filtyp		# holds current member type
+   integer mbrsiz,filsiz		# holds current member size
+   integer ccount			# YES if use character counts;
+					# otherwise NO
+   integer trailers			# YES if to include trailers;
+					# otherwise NO
+#-t-  carch                      1377  ascii   15-Jan-84  19:52:38
+#-t-  ar.inc                     1511  ascii   15-Jan-84  19:52:52
+#-h-  ar                        18660  ascii   07Jan84  13:47:50
+#########################################################################
+#			MAIN PROGRAM AR 				#
+#########################################################################
+#	Modification History						#
+#	--------------------						#
+#	01c 20Dec83 njd	changed typef to mbrtyp,filtyp and changed	#
+#			sizef to mrbsiz,filsiz				#
+#	01b 03Oct83 sd  declared amove() as integer in subroutine	#
+#			update. Added define cm_binbuf which		#
+#			handles binary files, instead of using 		#
+#			include file.					#
+#	01a 18Aug83 JIC Ratfixed.					#
+#########################################################################
+
+# (new definitions for the symbols file)
+define(byte,integer*2)
+
+ ## ar - archive file maintainer
+ 
+   define(ON,)
+   define(OFF,#)
+   define(FOLDF,OFF)           # if on, fold file names to lower case
+ 
+   define(MAXFILES,24)        # maximum number of files processable
+ 
+   define(DELETE_CMD,'d')    # delete member from archive (by name only)
+   define(PRINT_CMD,'p')     # print archive members
+   define(TABLE_CMD,'t')     # print table of contents
+   define(UPDATE_CMD,'u')    # update archive member
+   define(VERBOSE_CMD,'v')   # controls amount of output
+   define(EXTRACT_CMD,'x')   # extract archive member
+ 
+   define(USAGE_MESSAGE,"usage:  ar (dptux)[v] [-c[t]] archive [files].")
+ 
+   define(HEADER_STRING,"#-h-")
+   define(TRAILER_STRING,"#-t-")
+   define(NAMESIZE,20)         # size of name allowed in header
+ 
+   define(ASCII_STRING,"ascii ")
+   define(LOCAL_STRING,"local ")
+   define(BINARY_STRING,"binary")
+ 
+   define(BINARY_BUFSIZE,1024)  # size of buffer for binary reads
+
+   define(cm_binbuf,common /binbuf/ buf(BINARY_BUFSIZE)
+	  byte buf )
+ 
+  # Normally, this archiver works by comparing headers and trailers
+  # of members.  However, for compatibility with the previous archiver,
+  # it can be made to behave in 2 other ways:
+  #	1) Members are read/written strictly on the basis of character counts
+  #		use the "-c" flag anywhere on the command line
+  #	2) Members are read/written by character counts AND trailers
+  #	   are also maintained
+  #		use the "-ct" flag anywhere on the command line
+ 
+   define(USE_TRAILERS,NO)
+ 
+ 
+ 
+   DRIVER(ar)
+ 
+   include carch
+ 
+   character aname (FILENAMESIZE), comand (MAXARG)
+ 
+   integer i
+   integer getarg
+ 
+   errcnt = 0
+   ccount = NO
+   trailers = USE_TRAILERS
+ 
+   call query (USAGE_MESSAGE)
+ 
+   for (i=1; getarg(i, comand, 4) != EOF; i=i+1)
+	{
+	if (comand(1) == '-' & (comand(2) == 'c' | comand(2) == 'C'))
+	    {
+	    ccount = YES
+	    if (comand(3) == 't' | comand(3) == 'T')
+		trailers = YES
+	    call delarg (i)
+	    break
+	    }
+	}
+ 
+ 
+   if (ccount == NO)		# Force use of trailers
+	trailers = YES
+ 
+   if (getarg (1, comand, MAXARG) == EOF
+     | getarg (2, aname, FILENAMESIZE) == EOF)
+      call error (USAGE_MESSAGE)
+ 
+   call getfns
+ 
+   call fold (comand)
+ 
+   if (comand (1) == '-')      # skip leading '-' if present
+      i = 2
+   else
+      i = 1
+   if (comand (i + 1) == VERBOSE_CMD)
+      verbos = YES
+   else if (comand (i + 1) == EOS)
+      verbos = NO
+   else
+      call error (USAGE_MESSAGE)
+ 
+   if (comand (i) == UPDATE_CMD)
+      call update (aname)
+   else if (comand (i) == TABLE_CMD)
+      call table (aname)
+   else if (comand (i) == EXTRACT_CMD | comand (i) == PRINT_CMD)
+      call extrac (aname, comand (i))
+   else if (comand (i) == DELETE_CMD)
+      call delete (aname)
+   else
+      call error (USAGE_MESSAGE)
+ 
+   DRETURN
+   end
+## acopy - copy size characters from fdi to fdo
+#  NOTE - if fdo == ERR, copy to null
+subroutine acopy (fdi, fdo, size)
+character getch
+character c
+integer fdi, fdo, i, size
+ 
+for (i=1; i <= size; i=i+1)
+	{
+	if (getch (c, fdi) == EOF)
+		break
+	if (fdo != ERR)
+		call putch (c, fdo)
+	}
+return
+end
+## addfil - add file 'name' to archive open on 'fd'
+ 
+   subroutine addfil (name, fd)
+   character name (ARB)
+   filedes fd
+ 
+   include carch
+ 
+   character head(MAXLINE), trail(MAXLINE)
+ 
+   filedes nfd
+   filedes open
+ 
+ 
+   nfd = open (name, READ)
+   if (nfd == ERR) {
+      call putlin (name, ERROUT)
+      call remark (":  can't add.")
+      errcnt = errcnt + 1
+      return
+      }
+ 
+   if (errcnt == 0) {
+      call makhdr (head, name)
+      if (verbos == YES) {
+         call putlin (name, STDOUT)
+         call putch ('@n', STDOUT)
+         }
+      call putlin (head, fd)
+      call cpin (nfd, fd)
+      if (trailers == YES)
+	{
+      	call maktrl (head, trail)
+      	call putlin (trail, fd)
+	}
+      }
+ 
+   call close (nfd)
+   return
+   end
+## bcopy - copy binary archive member
+subroutine bcopy (fd1, fd2, size)
+#  Note:  if fd2 == ERR, copy to NULL
+filedes fd1, fd2
+integer size, i, j, len
+integer readf
+ 
+cm_binbuf
+ 
+j = size
+for (i=min(j,BINARY_BUFSIZE); i > 0; i = min (j, BINARY_BUFSIZE) )
+	{
+	len = readf (buf, i, fd1)
+	if (len == EOF)
+		break
+	if (fd2 != ERR)
+		call writef(buf, len, fd2)
+	j = j - i
+	}
+ 
+return
+end
+## cpin --- copy a file into an archive
+ 
+   subroutine cpin (fd, afd)
+   filedes fd, afd
+   integer getlin
+   character line(MAXLINE)
+ 
+   include carch
+ 
+   if (filtyp == BINARY)
+   	call bcopy (fd, afd, filsiz)
+   else
+	{
+	while (getlin (line, fd) != EOF)
+		call putlin (line, afd)
+	}
+   return
+   end
+## cpmemb --- copy archive element from one archive to another
+ 
+   subroutine cpmemb (oldafd, newafd)
+   filedes oldafd, newafd
+ 
+   include carch
+ 
+   character line(MAXLINE)
+ 
+   integer getlin, elend
+ 
+ 
+   if (mbrtyp == BINARY | ccount == YES)		# copy by counts
+	{
+	if (mbrtyp == BINARY)
+		call bcopy (oldafd, newafd, mbrsiz)
+	else
+		call acopy (oldafd, newafd, mbrsiz)
+	if (trailers == NO)
+		return
+	if (getlin (line, oldafd) != EOF)
+		{
+		call putlin (line, newafd)
+		if (elend (line) == YES)
+			return
+		}
+	}
+ 
+ 
+   else
+	{
+   	while (getlin (line, oldafd) != EOF)
+		{
+      		call putlin (line, newafd)
+      		if (elend (line) == YES)
+         		return
+		}
+	}
+ 
+   call remark ("archive integrity in doubt - missing trailer.")
+   errcnt = errcnt + 1
+   return
+   end
+## cpout --- copy a file out of an archive
+ 
+   subroutine cpout (afd, fd)
+   filedes afd, fd
+ 
+   include carch
+ 
+   character line (MAXLINE)
+ 
+   integer getlin, elend
+ 
+ 
+ 
+   if (mbrtyp == BINARY | ccount == YES)		# copy by counts
+	{
+	if (mbrtyp == BINARY)
+		call bcopy (afd, fd, mbrsiz)
+	else
+		call acopy (afd, fd, mbrsiz)
+	if (trailers == NO)
+		return
+	if (getlin (line, afd) != EOF)
+		{
+		if (elend (line) == YES)
+			return
+		}
+	}
+ 
+   else
+	{
+   	while (getlin (line, afd) != EOF)
+		{
+      		if (elend (line) == YES)
+         		return      # we've copied the whole archive element
+      		else
+         		call putlin (line, fd)  # ordinary text
+		}
+      	}
+ 
+   call remark ("archive integrity in doubt - missing trailer.")
+   errcnt = errcnt + 1
+   return
+   end
+## delete - delete files from the archive
+ 
+   subroutine delete (aname)
+   character aname (ARB)
+ 
+   include carch
+ 
+   character tname (FILENAMESIZE)
+ 
+   filedes afd, tfd
+   filedes create, open
+ 
+   integer junk
+   integer remove, amove
+ 
+   string tprefx "arctemp"
+ 
+   if (fcount <= 0)
+      call error ("delete by name only.")
+ 
+   afd = open (aname, READ)
+   if (afd == ERR)
+      call cant (aname)
+ 
+   call mkuniq (tprefx, tname)
+   tfd = create (tname, WRITE)
+   if (tfd == ERR)
+      call cant (tname)
+   call replac (afd, tfd, DELETE_CMD)
+   call notfnd
+ 
+   call close (afd)
+   call close (tfd)
+   if (errcnt == 0)
+      {
+      if (amove (tname, aname) == ERR)
+	call remark ("can't rename/move temp file.")
+      }
+  else
+	{
+      	call remark ("fatal errors - archive not altered.")
+	junk = remove (tname)
+	}
+ 
+   return
+   end
+## done - see if all files have been extracted/printed
+logical function done (junk)
+ 
+integer i
+ 
+include carch
+ 
+if (fcount <= 0)
+	return (.FALSE.)
+for (i=1; i <= fcount; i=i+1)
+	{
+	if (fstat(i) == NO)
+		return (.FALSE.)
+	}
+return (.TRUE.)
+end
+## extrac - extract files from archive
+ 
+   subroutine extrac (aname, cmd)
+   character aname (ARB), cmd
+ 
+   include carch
+ 
+   character name (FILENAMESIZE), hdr (MAXLINE)
+ 
+   filedes afd, fd
+   filedes create, open
+ 
+   integer filarg, gethdr
+   logical done
+ 
+   afd = open (aname, READ)
+   if (afd == ERR)
+      call cant (aname)
+ 
+   while (gethdr (afd, hdr, name) != EOF)
+ 
+      if (filarg (name) == NO)
+         call skipf (afd)
+ 
+      else {
+         if (verbos == YES) {
+            call putlin (name, STDOUT)
+            call putch ('@n', STDOUT)
+            }
+ 
+         if (cmd == PRINT_CMD)
+            call cpout (afd, STDOUT)
+         else {
+            fd = create (name, WRITE)
+            if (fd != ERR) {
+               call cpout (afd, fd)
+               call close (fd)
+               }
+            else {
+               call putlin (name, ERROUT)
+               call remark (":  can't create.")
+               errcnt = errcnt + 1
+               call skipf (afd)
+               }
+            }
+ 
+	 if (done(junk)) 
+		break
+         }
+ 
+   call notfnd
+   return
+   end
+## filarg - see if name is present in argument list
+ 
+   integer function filarg (name)
+   character name (ARB)
+ 
+   include carch
+ 
+   integer i
+   integer equal
+ 
+   if (fcount <= 0)
+      return (YES)
+ 
+   for (i = 1; i <= fcount; i = i + 1)
+      if (equal (name, fname (1, i)) == YES) {
+         fstat (i) = YES
+         return (YES)
+         }
+ 
+   return (NO)
+   end
+## fsize - determine size of file (in characters or bytes)
+ 
+   integer function fsize (name)
+   character name (ARB)
+   character line(MAXLINE)
+ 
+   filedes fd
+   filedes open
+ 
+   integer l, type
+   integer readf, gettyp, getlin
+ 
+   cm_binbuf
+ 
+   fd = open (name, READ)
+   if (fd == ERR)
+      return (ERR)
+ 
+   fsize = 0
+   type = gettyp (name)
+   repeat {
+      if (type == BINARY)
+      	l = readf (buf, BINARY_BUFSIZE, fd)
+      else
+	l = getlin (line, fd)
+      if (l == EOF)
+         break
+      fsize = fsize + l
+      }
+ 
+   call close (fd)
+   return
+   end
+## getfns - get file names into 'fname', check for duplicates
+ 
+   subroutine getfns
+ 
+   include carch
+ 
+   integer ap, fp, len, i
+   integer getarg, getlin
+ 
+   character line (MAXLINE)
+ 
+   fp = 1
+ 
+   for (ap = 3; getarg (ap, fname (1, fp), FILENAMESIZE) != EOF; ap = ap + 1)
+      if (fname (1, fp) == '-' & fname (2, fp) == EOS) {
+         while (fp <= MAXFILES) {
+            len = getlin (fname (1, fp), STDIN)
+            if (len == EOF)
+               break
+            fname (len, fp) = EOS         # remove the NEWLINE
+            FOLDF call fold (fname (1, fp))
+            fp = fp + 1
+            }
+         if (fp > MAXFILES)
+            if (getlin (line, STDIN) != EOF)
+               call error ("too many file names.")
+         }
+      else {
+         FOLDF call fold (fname (1, fp))
+         fp = fp + 1
+         if (fp > MAXFILES)
+            if (getarg (ap + 1, line, MAXLINE) != EOF)
+               call error ("too many file names.")
+         }
+ 
+   fcount = fp - 1
+   for (fp = 1; fp <= fcount; fp = fp + 1)
+      fstat (fp) = NO
+ 
+   for (fp = 1; fp < fcount; fp = fp + 1)
+      for (i = fp + 1; i <= fcount; i = i + 1)
+         if (equal (fname (1, fp), fname (1, i)) == YES) {
+            call putlin (fname (1, i), ERROUT)
+            call remark (":  duplicate file name.")
+            errcnt = errcnt + 1
+            }
+ 
+   if (errcnt != 0)
+      call error ("fatal errors - archive not altered.")
+ 
+   return
+   end
+## gethdr - get header information from archive member in 'fd'
+ 
+   integer function gethdr (fd, hdr, name)
+   filedes fd
+   character hdr (ARB), name (ARB)
+ 
+   include carch
+ 
+   character text (FILENAMESIZE)
+ 
+   integer i, j, len
+   integer getwrd, equal, getlin, ctoi
+ 
+   string hdrstr HEADER_STRING
+   string astr ASCII_STRING
+   string bstr BINARY_STRING
+ 
+   if (getlin (hdr, fd) == EOF)
+      return (EOF)
+   FOLDF call fold (hdr)
+ 
+   i = 1
+ 
+   len = getwrd (hdr, i, text)
+   if (equal (text, hdrstr) == NO) {
+      call remark ("archive not in proper format.")
+      errcnt = errcnt + 1
+      return (EOF)
+      }
+ 
+   call savhdr (hdr)
+   len = getwrd (hdr, i, name)	# pick up member name
+   len = getwrd (hdr, i, text)	# pick up member size
+   j = 1
+   mbrsiz = ctoi (text, j)
+   len = getwrd (hdr, i, text)	# pick up member type
+   if (equal (text, astr) == YES)
+	mbrtyp = ASCII
+   else if (equal (text, bstr) == YES)
+	mbrtyp = BINARY
+   else
+	mbrtyp = LOCAL
+ 
+ 
+   return (YES)
+   end
+## makhdr - make header line for an archive member
+ 
+   subroutine makhdr (head, name)
+   character head (ARB), name (ARB)
+ 
+   include carch
+ 
+   integer i, l, now (7)
+   integer fsize, gettyp, itoc, length
+ 
+   character text (MAXLINE)
+ 
+   string hdrstr HEADER_STRING
+   string blanks "  "
+   string astr ASCII_STRING
+   string lstr LOCAL_STRING
+   string bstr BINARY_STRING
+ 
+   i = 1
+   call stcopy (hdrstr, 1, head, i)
+   call stcopy (blanks, 1, head, i)
+   call stcopy (name, 1, head, i)
+   for (l = length(name) + 1; l <= NAMESIZE; l = l+1)
+           {
+           head(i) = ' '
+           i = i + 1
+           }
+ 
+   filtyp = gettyp (name)
+   filsiz = 0
+   if (filtyp == BINARY | ccount == YES)
+	filsiz = fsize (name)
+ 
+   for (l = itoc (filsiz, text, MAXLINE); l <= 10; l = l + 1)
+	{
+	head (i) = ' '
+	i = i + 1
+	}
+   call stcopy (text, 1, head, i)
+   call stcopy (blanks, 1, head, i)
+ 
+   if (filtyp == ASCII)
+      call stcopy (astr, 1, head, i)
+   else if (filtyp == BINARY)
+      call stcopy (bstr, 1, head, i)
+   else
+      call stcopy (lstr, 1, head, i)
+ 
+   call stcopy (blanks, 1, head, i)
+   call getnow (now)
+   call fmtdat (text(1), text(25), now, STANDARD)
+   call stcopy (text(1), 1, head, i)
+   call stcopy (blanks, 1, head, i)
+   call stcopy (text(25), 1, head, i)
+ 
+   head (i) = '@n'
+   head (i + 1) = EOS
+ 
+   return
+   end
+## maktrl - make trailer line for an archive member
+ 
+   subroutine maktrl (head, trail)
+   character trail (ARB), head (ARB)
+   integer i, j, len
+   integer getwrd
+ 
+   include carch
+ 
+   string tstr TRAILER_STRING
+ 
+   i = 1
+   len = getwrd (head, i, trail)        # skip over header string
+   j = 1
+   call stcopy (tstr, 1, trail, j)
+   call stcopy (head, i, trail, j)
+   return
+   end
+## notfnd - print 'not found' message if member isn't in archive
+ 
+   subroutine notfnd
+ 
+   include carch
+ 
+   integer i
+ 
+   for (i = 1; i <= fcount; i = i + 1)
+      if (fstat (i) == NO) {
+         call putlin (fname (1, i), ERROUT)
+         call remark (":  not in archive.")
+         errcnt = errcnt + 1
+         }
+ 
+   return
+   end
+## elend --- see if string is end of archive element
+ 
+   integer function elend (str)
+ 
+   character str (ARB)
+   integer i
+   integer equal
+ 
+   include carch
+ 
+  string tstr TRAILER_STRING
+ 
+ 
+  for (i=1; tstr(i) != EOS; i=i+1)       # look for trailer string
+          if (tstr(i) != str(i) )
+                return(NO)
+  call skipbl (str, i)
+  return ( equal(str(i), chead) )
+   end
+## replac - replace or delete archive members
+ 
+   subroutine replac (afd, tfd, cmd)
+   filedes afd, tfd
+   character cmd
+ 
+   include carch
+ 
+   character hdr (MAXLINE), name (FILENAMESIZE)
+ 
+   integer gethdr, filarg
+ 
+   while (gethdr (afd, hdr, name) != EOF)
+      if (filarg (name) == YES) {
+         if (cmd == UPDATE_CMD)
+            call addfil (name, tfd)
+         if (verbos == YES & cmd == DELETE_CMD) {
+            call putlin (name, STDOUT)
+            call putch ('@n', STDOUT)
+            }
+         call skipf (afd)
+         }
+      else {
+         call putlin (hdr, tfd)
+         call cpmemb (afd, tfd)
+         }
+ 
+   return
+   end
+## savhdr - save current header
+  subroutine savhdr (head)
+ 
+  include carch
+  character head(ARB)
+  integer i, len
+  integer getwrd
+ 
+  i = 1
+  len = getwrd (head, i, chead)
+  call skipbl (head, i)
+  call scopy (head, i, chead, 1)
+  return
+  end
+## skipf --- skip current archive element on file afd
+ 
+   subroutine skipf (afd)
+   filedes afd
+ 
+   include carch
+ 
+   character line (MAXLINE)
+ 
+   integer getlin, elend
+ 
+ 
+   if (mbrtyp == BINARY |  ccount == YES)
+	{
+	if (mbrtyp == BINARY)
+		call bcopy (afd, ERR, mbrsiz)
+	else
+		call acopy (afd, ERR, mbrsiz)
+	if (trailers == NO)
+		return
+	if (getlin (line, afd) != EOF)
+		if (elend (line) == YES)
+			return
+	}
+ 
+   else
+	{
+   	while (getlin (line, afd) != EOF)
+      	if (elend (line) == YES)
+         	return
+	}
+ 
+   call remark ("archive integrity in doubt - missing trailer.")
+   errcnt = errcnt + 1
+   return
+   end
+## table - print table of archive contents
+ 
+   subroutine table (aname)
+   character aname (ARB)
+ 
+   filedes afd
+   filedes open
+ 
+   character hdr (MAXLINE), name (FILENAMESIZE)
+ 
+   integer gethdr, filarg
+ 
+   logical done
+ 
+   afd = open (aname, READ)
+   if (afd == ERR)
+      call cant (aname)
+ 
+   while (gethdr (afd, hdr, name) != EOF) {
+      if (filarg (name) == YES)
+         call tprint (hdr)
+      if (done(junk))
+	break
+      call skipf (afd)
+      }
+ 
+   call close (afd)
+   call notfnd
+   return
+   end
+## tprint - print table entry for one archive member
+ 
+   subroutine tprint (hdr)
+   character hdr (ARB)
+ 
+   include carch
+ 
+   character name (FILENAMESIZE)
+ 
+   integer i, len
+   integer getwrd
+ 
+   i = 1
+   len = getwrd (hdr, i, name)      # skip the header string itself
+ 
+   len = getwrd (hdr, i, name)      # grab the filename
+ 
+   call putlin (name, STDOUT)
+   if (verbos == YES) {             # print other info only if asked
+      for (; hdr (i) != '@n' & hdr (i) != EOS; i = i + 1)
+         call putch (hdr (i), STDOUT)
+      }
+ 
+   call putch ('@n', STDOUT)
+ 
+   return
+   end
+## update - update existing files, add new ones at end
+ 
+   subroutine update (aname)
+   character aname (ARB)
+ 
+   include carch
+ 
+   filedes afd, tfd
+   filedes open, create
+ 
+   integer fp, junk
+   integer remove, amove
+ 
+   character tname (FILENAMESIZE)
+ 
+   string tprefx "arctemp"
+ 
+   afd = open (aname, READ)
+   if (afd == ERR) {          # try to create a new archive
+      afd = create (aname, WRITE)
+      if (afd == ERR)
+         call cant (aname)
+      call close (afd)        # close and reopen to mark EOF
+      afd = open (aname, READ)
+      if (afd == ERR)
+         call cant (aname)
+      }
+ 
+   call mkuniq (tprefx, tname)
+   tfd = create (tname, WRITE)
+   if (tfd == ERR)
+      call cant (tname)
+ 
+   call replac (afd, tfd, UPDATE_CMD)        # update existing members
+ 
+   for (fp = 1; fp <= fcount; fp = fp + 1)   # add new members
+      if (fstat (fp) == NO) {
+         call addfil (fname (1, fp), tfd)
+         fstat (fp) = YES
+         }
+ 
+   call close (afd)
+   call close (tfd)
+ 
+   if (errcnt == 0)
+	{
+	if (amove (tname, aname) == ERR)
+		call remark ("can't rename/move temp file.")
+	}
+   else {
+      call remark ("fatal errors - archive not altered.")
+      junk = remove (tname)
+      }
+ 
+   return
+   end
+#-t-  ar                        18660  ascii   07Jan84  13:47:50
+                                                                                                                                                                                                                                                                                                                                              

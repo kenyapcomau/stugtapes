@@ -1,0 +1,6920 @@
+#-h-  memlb.all                 24161  ascii   05Jan84  08:10:24
+#-h-  memlb.doc                  4707  ascii   04Jan84  11:24:05
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^memlb(2)^%^memlb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+memlb - ratfor dynamic memory allocation routines
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+sts = memalloc( index, size, type )
+sts = memeput (index, element, position)
+sts = memeget (index, element, position)
+sts = memput (index, array, size, position)
+sts = memget (index, array, size, position)
+sts = memfree (index)
+sts = memcop( index1, offset1, index2, offset2, size )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+Memlb is a collection of routines that allow manipulation
+of dynamically allocated memory.
+The dynamic memory is accessed through a machine-dependent pointer,
+'index'. This pointer has type and word size equivalent to integer
+and to the memlb type MEMINTEGER.
+The routines are:
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memalloc
+allocates memory dynamically for an array
+of dimension 'size' and of type 'type'.
+The types currently recognized are
+MEMINTEGER, MEMCHARACTER, MEMLOGICAL,
+MEMREAL, MEMCOMPLEX, and MEMDOUBLEPRECISION.
+.sp
+'Index' is used by the other
+dynamic memory allocation routines to reference the memory space.
+If not enough memory is available, index is set to
+INSUFFICIENTMEMORY and ERR is returned, otherwise OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memfree
+frees memory allocated dynamically by memalloc.
+.sp
+'Index' is the index of the memory area, returned by memalloc.
+If 'index' was set to INSUFFICIENTMEMORY by memalloc, ERR
+is returned, otherwise OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memget
+gets an array of elements stored in the dynamic memory space
+given by 'index'
+and returns it into 'array', an array
+of size no less than 'size' and of the same type that was specified
+when the memory area was allocated.
+.sp
+The elements are retrieved from the dynamic memory area starting
+with the 'position'th element.
+If an attempt is made to retrieve more elements than exist in the dynamic
+memory area, memget only copies as many elements as exist.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned, otherwise
+OK is.
+Note that the contents of the memory area will be unpredictable
+unless information is put in it first with memput or memeput.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memput
+stores a copy of the array 'array'
+into the dynamically allocated memory area 'index'.
+'Array' should be an array of size no less than 'size',
+and of the same type that was specified when the memory
+area was allocated.
+.sp
+The elements are stored into the dynamic memory area starting
+at the 'position'th element.
+If an attempt is made to store elements past the end of the
+dynamic memory area, memput will stop storing elements
+at the end of memory area.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memeget
+gets the position'th element of the array stored
+in the dynamic memory space
+given by 'index'
+and returns it into 'element', an item
+of the same type that was specified
+when the memory area was allocated.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+Note that the contents of the memory area will be unpredictable
+unless information is put in it first with memput or memeput.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memeput
+stores 'element', an item
+of the same type that was specified when the memory
+area was allocated by a call to memalloc,
+into the position'th element of the array stored
+in the memory area 'index'.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memcop
+copies a segment of memory from one dynamic segment to another dynamic
+segment.
+.sp
+'Index1' is the address of the first dynamic memory segment, and 'offset1'
+is its displacement. The destinintion of the copy is represented by 'index2'
+and its displacement by 'offset2'. 'Size' corresponds to the number of
+elements to be moved to the destination segment.
+.sp
+If 'index1' or 'index2' is INSUFFICIENTMEMORY, or if either 'offset1' or
+'offset2' is not within the range of the dynamic memory, ERR is returned.
+Otherwise OK is returned.
+.sp
+.in -6
+.sp
+.ne 2
+.fi
+.ti -5
+FILES
+.br
+/usr/incl/memsym.  Include file containing the
+symbols mentioned herein.
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+tbllb(2)
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Todd Hammond
+
+#-t-  memlb.doc                  4707  ascii   04Jan84  11:24:05
+#-h-  memlb.inc                  2483  ascii   04Jan84  11:24:06
+#-h-  memsym                     1879  ascii   04Jan84  11:23:36
+## memsym - symbols definitions for memory allocation
+#nolist
+
+# revision history
+#
+# 01e 08Nov83 mam .Removed the data types(word,pointer).
+# 01d 12jul83 jc  .Ratfixed
+# 01c 09aug82 th  .Changed INSUFFICIENTMEMORY to 0 on the vax
+#                  (this is what an uninitialized variable is likely to have
+#                  in it)
+#                 .Added definitions for PDP_10
+# 01b 05Nov81 cal .Added revision history and turned off listing
+
+# portability note:
+#   dmlb.t assumes that the minimum unit is a character,
+#   and that all the 'MEMWORD', ...., definitions are in terms of
+#   characters
+
+ifdef (VAX)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,4)
+    define(MEMINTEGER,4)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,4)
+    define(MEMREAL,4)
+    define(MEMDOUBLEPRECISION,8)
+    define(MEMCOMPLEX,8)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+ifdef (MODCOMP)
+  
+  
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,1)
+    define(MEMREAL,2)
+    define(MEMDOUBLEPRECISION,4)
+    define(MEMCOMPLEX,4)
+  
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,-1)
+
+enddef
+ifdef (PDP_10)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+
+    # MEMCHARACTER could probably be -7 except for rat4sym, which
+    # tries to store things larger than seven bits in a character.
+    define(MEMCHARACTER,1)
+
+    define(MEMLOGICAL,1)
+    define(MEMREAL,1)
+    define(MEMDOUBLEPRECISION,2)
+    define(MEMCOMPLEX,2)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+
+#list
+#-t-  memsym                     1879  ascii   04Jan84  11:23:36
+#-h-  memcom                      344  ascii   04Jan84  11:23:37
+## memcom - common for memory allocation routines
+#nolist
+
+# revision history
+#
+# 01a 09Nov83 mam .Changed data type 'word' to 'character'.
+
+common /memcom/ memory(SCRATCH_MEMORY_SIZE),
+    		firstfreeblock
+
+character memory		# array of 'dynamically' allocated memory
+pointer firstfreeblock	# first free block of memory in a linked list
+
+#list
+#-t-  memcom                      344  ascii   04Jan84  11:23:37
+#-t-  memlb.inc                  2483  ascii   04Jan84  11:24:06
+#-h-  memlb                     16581  ascii   04Jan84  11:24:07
+# memlb.t - memory allocation routines
+
+# modification history
+#
+# 02d 09Nov83 mam changed data type 'word' to 'character'
+# 02c 09Aug83 jic ratfixed
+# 02b 17may83 pw  placed machine independent by those routines listed
+#                 twice in xref.lis
+# 02a 19apr82 tb  changed all mem routines to return status. Changed
+#                 memput and memget to have a position parameter
+# 01d 23jul81 ah  formatted to meet ratfor coding standards
+# 01c 06jul81 vp  renamed memlb
+# 01b 12may81 th  modified so lines not too long
+# 01a 21apr81 th  written
+
+# the following routines are user visible:
+#   memalloc - allocate memory
+#   memfree - deallocate memory
+#   memget - read dynamically allocated block
+#   memput - write dynamically allocated block
+#   memeget - read element in dynamically allocated block
+#   memeput - write element in dynamically allocated block
+
+# to implement these routines:
+#
+# 1. modify the definitions of the following items in memsym
+#    1. word - should be the smallest possible allocatable unit
+#       on the computer it is implemented in
+#    2. pointer - should be a variable type large enough to
+#       hold an address
+#    3. the MEM<type> definitions: these should be defined as
+#       the number of 'word's in the type specified
+#       1. MEMWORD (always 1)
+#       2. MEMPOINTER
+#       3. MEMINTEGER
+#       4. MEMCHARACTER
+#       5. MEMLOGICAL
+#       6. MEMREAL
+#       7. MEMDOUBLEPRECISION
+#       8. MEMCOMPLEX
+#       9. MEMLOGICAL
+# 3. SCRATCH_MEMORY_SIZE is the size of the scratch array that
+#    is used to simulate dynamic memory allocation
+# 4. MINIMUM_BLOCK should be set to maximum of values given in
+#    the comments.  If MEMINTEGER < 2 * MEMPOINTER, the second must
+#    be used.  If 2 * MEMPOINTER < MEMINTEGER, the first must be used.
+
+include memsym
+
+# the size of the scratch memory array
+define(SCRATCH_MEMORY_SIZE,10000)
+
+# for all blocks
+define(LAST_BLOCK_START_OFFSET,(-MEMPOINTER))  # type MEMPOINTER
+define(REAL_SIZE_OFFSET,0)  # type MEMINTEGER
+define(TYPE_OFFSET,arith(REAL_SIZE_OFFSET,+,MEMINTEGER))  # type MEMINTEGER
+    define(NOT_ALLOCATED,-1)  # type set to this if block not allocated
+
+# for allocated blocks only
+define(SIZE_OFFSET,arith(TYPE_OFFSET,+,MEMINTEGER))  # type MEMINTEGER
+define(DATA_OFFSET,arith(SIZE_OFFSET,+,MEMINTEGER))  # type MEMINTEGER
+
+# for unallocated blocks
+define(LAST_BLOCK_OFFSET,arith(TYPE_OFFSET,+,MEMINTEGER))  # type MEMPOINTER
+define(NEXT_BLOCK_OFFSET,arith(LAST_BLOCK_OFFSET,+,MEMPOINTER))  # MEMPOINTER
+
+# MINIMUM_BLOCK should be the greater of following
+#   define(MINIMUM_BLOCK,arith(DATA_OFFSET,+,MEMPOINTER))
+#   define(MINIMUM_BLOCK,arith(arith(NEXT_BLOCK_OFFSET,+,MEMPOINTER),+,
+#   MEMPOINTER))
+define(MINIMUM_BLOCK,arith(arith(NEXT_BLOCK_OFFSET,+,MEMPOINTER),+,
+MEMPOINTER))
+
+# SLOP is the minimum size a block must have over the size wanted
+# before it is split.
+# It must be greater that MINIMUM_BLOCK
+define(SLOP,arith(MINIMUM_BLOCK,+,20))
+
+### blkmove - move block of memory     (machine indep)
+#
+# synopsis
+#   call blkmove (a, words, b)
+#
+# description
+#   moves the first 'words' words of a to b
+#
+# passed
+#   a - contains the words to move
+#   words - the number of words to move
+#
+# returned
+#   b - will contain the first 'words' words of a
+
+subroutine blkmove (a, words, b)
+character a(ARB)
+integer words
+character b(ARB)
+
+    integer i
+
+    for (i=1; i<=words; i=i+1)
+    	b(i) = a(i)
+
+    return
+
+end
+
+### cutblock - cut block out of linked list of free blocks
+#
+# synopsis
+#   call cutblock (index)
+#
+# description
+#   removes block from linked list of free blocks
+#   index must not be the only block in the linked list
+#
+# passed
+#   index - the block to remove from the linked list
+
+subroutine cutblock (index)
+pointer index
+
+    pointer lblock  # last block in linked list
+    pointer nblock  # next block in linked list
+
+    include memcom
+
+    call blkmove (memory(index + LAST_BLOCK_OFFSET), MEMPOINTER, lblock)
+    call blkmove (memory(index + NEXT_BLOCK_OFFSET), MEMPOINTER, nblock)
+    call linkblocks (lblock, nblock)
+
+    # now, index might very well have been firstfreeblock
+    # to take care of this possibility, we change firstfreeblock
+    # to the block following index
+
+    firstfreeblock = nblock
+
+    return
+
+end
+
+### linkblocks - connect two blocks together
+#
+# synopsis
+#   call linkblocks (a, b)
+#
+# description
+#   links block a to block b, so that the block following a is b,
+#   and the block preceeding b is a
+#
+# passed
+#   a, b - blocks to link together
+
+subroutine linkblocks (a, b)
+pointer a
+pointer b
+
+    include memcom
+
+
+    call blkmove (b, MEMPOINTER, memory(a + NEXT_BLOCK_OFFSET))
+    call blkmove (a, MEMPOINTER, memory(b + LAST_BLOCK_OFFSET))
+
+    return
+
+end
+
+### memalloc - allocate memory     (machine indep)
+#
+# synopsis
+#   sts = memalloc (index, size, type)
+#
+# description
+#   allocates space for array of size 'size' and type 'type'
+#
+# passed
+#   size - the number of elements of type 'type' to allocate
+#   type - the type of element to allocate (i.e. MEMINTEGER)
+#
+# returned
+#   index (type pointer)  - a value used by other memory
+#	allocation routines
+#    sts  - ERR if insufficient memory for allocation
+
+integer function memalloc (index, size, type)
+pointer index
+integer size
+integer type
+
+    integer reqdsize
+    pointer lastblock
+    pointer block
+    integer blocksize
+    pointer nextblock
+    pointer newblock
+
+    include memcom
+
+    call meminit
+
+    reqdsize = max (MINIMUM_BLOCK,
+	DATA_OFFSET + size * type + MEMPOINTER)
+    block = firstfreeblock
+
+    repeat
+	{
+
+	# get its size
+	call blkmove (memory(block + REAL_SIZE_OFFSET), MEMINTEGER,
+			blocksize)
+
+	if (blocksize >= reqdsize)
+	    {
+
+	    # we found a free block which is big enough for us to use
+
+	    call blkmove (memory(block + LAST_BLOCK_OFFSET),
+			MEMPOINTER, lastblock)
+	    call blkmove (memory(block + NEXT_BLOCK_OFFSET),
+			MEMPOINTER, nextblock)
+
+	    if (blocksize >= reqdsize + SLOP)
+		{
+
+		# split block
+
+		newblock = block
+		block = block + blocksize - reqdsize
+
+		# the blocks are split like this so that it this block
+		# is firstfreeblock, firstfreeblock won't have to be
+		# changed
+
+		# we can't cut the block out of the linked list as below,
+		# because 'block' may very well be the only free block
+
+		call setupblock (newblock,
+			blocksize - reqdsize, NOT_ALLOCATED)
+		call setupblock (block,
+			reqdsize, NOT_ALLOCATED)
+
+		call linkblocks (lastblock, newblock)
+		call linkblocks (newblock, nextblock)
+
+		}
+
+	    else if (block == nextblock)
+		{
+		# this is the last block, and it can't be split
+		# we must always have at least one entry in the linked
+		# list, so don't allocate
+
+		index = INSUFFICIENTMEMORY
+                memalloc = ERR
+		break
+		}
+
+	    else
+		{
+		# don't split block
+		call cutblock (block)
+		}
+
+            index = block
+            memalloc = OK
+	    break
+
+	    }
+
+	# try next block in linked list
+	call blkmove (memory(block + NEXT_BLOCK_OFFSET),
+			MEMPOINTER, block)
+
+	} until (block == firstfreeblock)
+
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+	call blkmove (size, MEMINTEGER,
+			memory(index + SIZE_OFFSET))
+	call blkmove (type, MEMINTEGER,
+			memory(index + TYPE_OFFSET))
+	}
+
+    return
+
+end
+
+### memeget - read element in dynamically allocated block     (machine indep)
+#
+# synopsis
+#   sts = memeget (index, element, number)
+#
+# description
+#   gets the 'number'th element of the dynamically
+#   allocated array referenced by 'index', and puts it
+#   in 'element'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   number - the number of the element to get
+#
+# returned
+#   element - the element of the array
+#   sts     - ERR if position or index is invalid
+
+integer function memeget (index, element, number)
+pointer index
+character element(ARB)
+integer number
+
+    integer size
+    integer type
+
+    include memcom
+
+    memeget = ERR
+    call meminit
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove (memory(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove (memory(index + TYPE_OFFSET), MEMINTEGER, type)
+
+    	if (number <= size)
+            {
+
+    	    call blkmove (memory(index  +  DATA_OFFSET  +
+                          type * (number - 1)), type, element)
+            memeget = OK
+            
+            }
+
+	}
+
+    return
+
+end
+
+### memeput - write element in dynamically allocated block     (machine indep)
+#
+# synopsis
+#   sts = memeput (index, element, number)
+#
+# description
+#   writes 'element' in the 'number'th position of the
+#   dynamically allocated array referenced by 'index'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   element - the element to write in the memory area
+#   number - the position of the element to write in the memory area
+#
+# returned
+#   sts - ERR if position or index is invalid
+
+integer function memeput (index, element, number)
+pointer index
+character element(ARB)
+integer number
+
+    integer size
+    integer type
+
+    include memcom
+
+    memeput = ERR
+    call meminit
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove (memory(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove (memory(index + TYPE_OFFSET), MEMINTEGER, type)
+
+    	if (number <= size)
+            {
+
+            call blkmove (element, type, memory(index +
+                          DATA_OFFSET + type * (number - 1)))
+            memeput = OK
+ 
+            }
+
+	}
+
+
+    return
+
+end
+
+### memfree - free memory     (machine indep)
+#
+# synopsis
+#   sts = memfree (index)
+#
+# description
+#   frees the memory area referenced by index
+#
+# passed
+#   index (type pointer) - the memory area to free
+#
+# returned
+#   sts - ERR if index is INSUFFICIENTMEMORY
+
+integer function memfree (index)
+pointer index
+
+    pointer lastblock	# start of block physically preceeding index
+    integer lasttype	# type of physically preceeding block
+    integer blksize	# size of block at index
+    pointer nextblock	# start of block physically following index
+    integer nexttype	# type of physically following block
+    pointer nblock	# next block in linked list
+
+    include memcom
+
+    memfree = OK
+    call meminit
+
+    if (index == INSUFFICIENTMEMORY)
+        memfree = ERR
+
+    else
+    	{
+
+	# mark block as deallocated
+
+	call blkmove (NOT_ALLOCATED, MEMINTEGER,
+		memory(index + TYPE_OFFSET))
+
+
+	# add block to be freed to linked list: change
+	#
+	# firstfreeblock -> a
+	#
+	# to
+	#
+	# firstfreeblock -> index -> a
+
+	call blkmove (memory(firstfreeblock + NEXT_BLOCK_OFFSET),
+		MEMPOINTER, nblock)
+
+	call linkblocks (firstfreeblock, index)
+	call linkblocks (index, nblock)
+
+
+	call blkmove (memory(index + REAL_SIZE_OFFSET),
+		MEMPOINTER, blksize)
+
+	call blkmove (memory(index + LAST_BLOCK_START_OFFSET),
+		MEMPOINTER, lastblock)
+	nextblock = index + blksize
+
+	call blkmove (memory(nextblock + TYPE_OFFSET),
+			MEMINTEGER, nexttype)
+        call blkmove (memory(lastblock + TYPE_OFFSET),
+			MEMINTEGER, lasttype)
+
+	# try to merge with next block
+
+	if (nexttype == NOT_ALLOCATED)
+	    {
+	    call mergeblocks (index, nextblock)
+	    }
+
+	# try to merge with last block
+
+	if (lasttype == NOT_ALLOCATED)
+	    {
+	    call mergeblocks (lastblock, index)
+	    }
+
+	}
+
+    return
+
+end
+
+### memget - read dynamically  allocated block     (machine indep)
+#
+# synopsis
+#   sts = memget (index, array, number, position)
+#
+# description
+#   gets 'number' elements from the dynamically
+#   allocated array referenced by 'index', beginning with
+#   the 'position'th element and puts them in 'array'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   number - the number of elements to get
+#
+# returned
+#   array - the array to put the elements in
+#   sts - ERR if position or index is invalid
+
+integer function memget (index, array, number, position)
+pointer index
+character array(ARB)
+integer number, position
+
+    integer truenumber
+    integer size
+    integer truesize           #number of elements after 'position'
+    integer type
+
+    include memcom
+
+    memget = ERR
+    call meminit
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove (memory(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove (memory(index + TYPE_OFFSET), MEMINTEGER, type)
+
+        if (position <= size)                   #within memory bounds
+            {
+
+            memget = OK
+            truesize = (size - position) + 1    #elements after position
+
+            if (number <= truesize)             #wants less than available
+	        truenumber = number
+            else                                #wants more than available
+                truenumber = truesize
+
+            call blkmove (memory(index + DATA_OFFSET + type *
+                          (position - 1)), truenumber * type, array)
+
+            }
+	}
+
+    return
+
+end
+
+### meminit - initialize memory allocator
+#
+# synopsis
+#   call meminit
+#
+# description
+#   initializes memory allocator
+
+subroutine meminit
+
+    pointer head
+    pointer freeblock
+    pointer tail
+
+    include memcom
+
+    integer initialized
+    data initialized /NO/
+
+    if (initialized == NO)
+    	{
+
+	head = 1
+	freeblock = 1 + MINIMUM_BLOCK
+	tail = 1 + SCRATCH_MEMORY_SIZE - MINIMUM_BLOCK
+
+	call setupblock (head, MINIMUM_BLOCK, MEMWORD)
+	call setupblock (freeblock, SCRATCH_MEMORY_SIZE -
+    		2 * MINIMUM_BLOCK, NOT_ALLOCATED)
+	call setupblock (tail, MINIMUM_BLOCK, MEMWORD)
+
+	call linkblocks (freeblock, freeblock)
+
+	firstfreeblock = freeblock
+
+	initialized = YES
+
+    	}
+
+    return
+
+end
+
+### memput - write dynamically  allocated block     (machine indep)
+#
+# synopsis
+#   sts = memput (index, array, number, position)
+#
+# description
+#   writes 'number' elements of the array 'array'
+#   into the dynamically allocated array referenced by
+#   'index', starting with the 'position'th element
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   array - the array of elements to write in the memory area
+#   number - the number of elements to put
+#
+# returned
+#   sts - ERR if position or index invalid
+
+integer function memput (index, array, number, position)
+pointer index
+character array(ARB)
+integer number, position
+
+    integer truenumber
+    integer size
+    integer truesize         #number of elements in memory after position
+    integer type
+
+    include memcom
+
+    memput = ERR
+    call meminit
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove (memory(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove (memory(index + TYPE_OFFSET), MEMINTEGER, type)
+
+        if (position <= size)             #within memory bounds
+            {
+
+            memput = OK
+            truesize = (size - position) + 1   #elements after position
+
+            if (number <= truesize)            #wants less than available
+                truenumber = number
+            else                               #wants more than available
+                truenumber = truesize
+
+            call blkmove (array, truenumber * type, memory(index +
+                          DATA_OFFSET + type * (position - 1)))
+
+            }
+
+	}
+
+
+    return
+
+end
+
+### mergeblocks - merge two contiguous blocks
+#
+# synopsis
+#   call mergeblocks (a, b)
+#
+# description
+#   merges free blocks a and b, where a is the block
+#   physically preceeding b
+#
+# passed
+#   a - block which should have b appended to it
+#   b - block which should have a prepended to it
+
+subroutine mergeblocks (a, b)
+pointer a
+pointer b
+
+    integer bsize
+
+    include memcom
+
+
+    # it changes
+    #
+    # ... -> alast -> a -> anext -> ... -> blast -> b -> bnext -> ...
+    #
+    # to
+    #
+    # ... -> alast -> a & b -> anext -> ... -> blast -> bnext -> ...
+
+    call cutblock (b)
+    call blkmove (memory(b + REAL_SIZE_OFFSET), MEMINTEGER, bsize)
+    call setupblock (a, b - a + bsize, NOT_ALLOCATED)
+
+    return
+
+end
+
+### setupblock - initialize a block
+#
+# synopsis
+#   call setupblock (start, realsize, type)
+#
+# description
+#   sets up a block starting at 'start' with real size 'realsize'
+#   and type 'type'
+#
+# passed
+#   start - the starting position of the block (a pointer)
+#   realsize - the size of the block
+#   type - the type of the block
+
+subroutine setupblock (start, realsize, type)
+pointer start
+integer realsize
+integer type
+
+    include memcom
+
+    call blkmove (realsize, MEMINTEGER, memory(start + REAL_SIZE_OFFSET))
+    call blkmove (type, MEMINTEGER, memory(start + TYPE_OFFSET))
+    call blkmove (start, MEMPOINTER, memory(start + realsize +
+	    LAST_BLOCK_START_OFFSET))
+
+    return
+
+end
+#-t-  memlb                     16581  ascii   04Jan84  11:24:07
+#-t-  memlb.all                 24161  ascii   05Jan84  08:10:24
+#-h-  vmemlb.all                18396  ascii   05Jan84  08:10:27
+#-h-  vmemlb.doc                 4707  ascii   05Jan84  07:58:49
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^memlb(2)^%^memlb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+memlb - ratfor dynamic memory allocation routines
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+sts = memalloc( index, size, type )
+sts = memeput (index, element, position)
+sts = memeget (index, element, position)
+sts = memput (index, array, size, position)
+sts = memget (index, array, size, position)
+sts = memfree (index)
+sts = memcop( index1, offset1, index2, offset2, size )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+Memlb is a collection of routines that allow manipulation
+of dynamically allocated memory.
+The dynamic memory is accessed through a machine-dependent pointer,
+'index'. This pointer has type and word size equivalent to integer
+and to the memlb type MEMINTEGER.
+The routines are:
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memalloc
+allocates memory dynamically for an array
+of dimension 'size' and of type 'type'.
+The types currently recognized are
+MEMINTEGER, MEMCHARACTER, MEMLOGICAL,
+MEMREAL, MEMCOMPLEX, and MEMDOUBLEPRECISION.
+.sp
+'Index' is used by the other
+dynamic memory allocation routines to reference the memory space.
+If not enough memory is available, index is set to
+INSUFFICIENTMEMORY and ERR is returned, otherwise OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memfree
+frees memory allocated dynamically by memalloc.
+.sp
+'Index' is the index of the memory area, returned by memalloc.
+If 'index' was set to INSUFFICIENTMEMORY by memalloc, ERR
+is returned, otherwise OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memget
+gets an array of elements stored in the dynamic memory space
+given by 'index'
+and returns it into 'array', an array
+of size no less than 'size' and of the same type that was specified
+when the memory area was allocated.
+.sp
+The elements are retrieved from the dynamic memory area starting
+with the 'position'th element.
+If an attempt is made to retrieve more elements than exist in the dynamic
+memory area, memget only copies as many elements as exist.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned, otherwise
+OK is.
+Note that the contents of the memory area will be unpredictable
+unless information is put in it first with memput or memeput.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memput
+stores a copy of the array 'array'
+into the dynamically allocated memory area 'index'.
+'Array' should be an array of size no less than 'size',
+and of the same type that was specified when the memory
+area was allocated.
+.sp
+The elements are stored into the dynamic memory area starting
+at the 'position'th element.
+If an attempt is made to store elements past the end of the
+dynamic memory area, memput will stop storing elements
+at the end of memory area.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memeget
+gets the position'th element of the array stored
+in the dynamic memory space
+given by 'index'
+and returns it into 'element', an item
+of the same type that was specified
+when the memory area was allocated.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+Note that the contents of the memory area will be unpredictable
+unless information is put in it first with memput or memeput.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memeput
+stores 'element', an item
+of the same type that was specified when the memory
+area was allocated by a call to memalloc,
+into the position'th element of the array stored
+in the memory area 'index'.
+.sp
+If 'position' is not within the range of the dynamic memory area,
+or if 'index' is INSUFFICIENTMEMORY, ERR is returned. Otherwise
+OK is returned.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Memcop
+copies a segment of memory from one dynamic segment to another dynamic
+segment.
+.sp
+'Index1' is the address of the first dynamic memory segment, and 'offset1'
+is its displacement. The destinintion of the copy is represented by 'index2'
+and its displacement by 'offset2'. 'Size' corresponds to the number of
+elements to be moved to the destination segment.
+.sp
+If 'index1' or 'index2' is INSUFFICIENTMEMORY, or if either 'offset1' or
+'offset2' is not within the range of the dynamic memory, ERR is returned.
+Otherwise OK is returned.
+.sp
+.in -6
+.sp
+.ne 2
+.fi
+.ti -5
+FILES
+.br
+/usr/incl/memsym.  Include file containing the
+symbols mentioned herein.
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+tbllb(2)
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Todd Hammond
+
+#-t-  vmemlb.doc                 4707  ascii   05Jan84  07:58:49
+#-h-  vmemlb.inc                 2009  ascii   05Jan84  07:58:50
+#-h-  memsym                     1879  ascii   05Jan84  07:57:35
+## memsym - symbols definitions for memory allocation
+#nolist
+
+# revision history
+#
+# 01e 08Nov83 mam .Removed the data types(word,pointer).
+# 01d 12jul83 jc  .Ratfixed
+# 01c 09aug82 th  .Changed INSUFFICIENTMEMORY to 0 on the vax
+#                  (this is what an uninitialized variable is likely to have
+#                  in it)
+#                 .Added definitions for PDP_10
+# 01b 05Nov81 cal .Added revision history and turned off listing
+
+# portability note:
+#   dmlb.t assumes that the minimum unit is a character,
+#   and that all the 'MEMWORD', ...., definitions are in terms of
+#   characters
+
+ifdef (VAX)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,4)
+    define(MEMINTEGER,4)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,4)
+    define(MEMREAL,4)
+    define(MEMDOUBLEPRECISION,8)
+    define(MEMCOMPLEX,8)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+ifdef (MODCOMP)
+  
+  
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,1)
+    define(MEMREAL,2)
+    define(MEMDOUBLEPRECISION,4)
+    define(MEMCOMPLEX,4)
+  
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,-1)
+
+enddef
+ifdef (PDP_10)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+
+    # MEMCHARACTER could probably be -7 except for rat4sym, which
+    # tries to store things larger than seven bits in a character.
+    define(MEMCHARACTER,1)
+
+    define(MEMLOGICAL,1)
+    define(MEMREAL,1)
+    define(MEMDOUBLEPRECISION,2)
+    define(MEMCOMPLEX,2)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+
+#list
+#-t-  memsym                     1879  ascii   05Jan84  07:57:35
+#-t-  vmemlb.inc                 2009  ascii   05Jan84  07:58:50
+#-h-  vmemlb                    11290  ascii   05Jan84  07:58:50
+#### memlb - memory allocation routines
+
+# modification history
+#
+# 02g 05Dec83 jpl+rc  Fixed bug in debug code of memcop.
+# 02f 09Nov83 mam Changed data type 'word' to 'character'.
+# 02e 05Aug83  rc Added routine 'memcop' (written by John Lynch) to copy
+#                 segments of dynamic memory.
+# 02d 15Jul83 jic Ratfixed.
+# 02c 02Jun83 cal Replaced the subroutine blkmove with a macro that
+#                 uses lib$movc3 to speed up block moves.
+# 02b 17may83 pw  placed vax version by those routines listed
+#                 twice in xref.lis
+# 02a 20Apr82 tb  changed all mem routines to return status. changed
+#                 memput and memget to have a position parameter.
+# 01c 06jul81 vp  renamed memlb
+# 01b 29jun81 th  put headers in
+# 01a 21apr81 th  written
+
+# the following routines are user visible:
+#   memalloc - allocate memory
+#   memfree - deallocate memory
+#   memget - read dynamically allocated block
+#   memput - write dynamically allocated block
+#   memeget - read element in dynamically allocated block
+#   memeput - write element in dynamically allocated block
+#   memcop - copy segment of dynamic memory from one location to another
+
+# to implement these routines:
+#
+# 1. modify the definitions of the following items in memsym
+#    1. word - should be the smallest possible allocatable unit
+#       on the computer it is implemented in
+#    2. pointer - should be a variable type large enough to
+#       hold an address
+#    3. the MEM<type> definitions: these should be defined as
+#       the number of 'word's in the type specified
+#       1. MEMWORD (always 1)
+#       2. MEMCHARACTER
+#       3. MEMINTEGER
+#       4. MEMREAL
+#       5. MEMDOUBLEPRECISION
+#       6. MEMCOMPLEX
+#       7. MEMLOGICAL
+#       8. MEMPOINTER
+
+include memsym
+
+define(SIZE_OFFSET,0)  # size is MEMINTEGER
+define(TYPE_OFFSET,arith(SIZE_OFFSET,+,MEMINTEGER))  # size is MEMINTEGER
+define(DATA_OFFSET,arith(TYPE_OFFSET,+,MEMINTEGER))  # start of data
+
+
+# ## blkmove- move block of memory     (vax version)
+#
+# synopsis
+#   call blkmove(a, words, b)
+#
+# description
+#   moves the first 'words' words of a to b
+#
+# passed
+#   a - contains the words to move
+#   words - the number of words to move
+#
+# returned
+#   b - will contain the first 'words' words of a
+#
+# note:
+#   "word" and "byte" must be the same size in order to use
+#   lib$movc3; also, there is a limit of 65535 bytes that may
+#   be transfered.
+#
+#   The operation of lib$movc3 is such that overlap of the
+#   source and destination items does not affect the result.
+#
+define(blkmove,lib$movc3($2,$1,$3))
+
+### memalloc - allocate memory     (vax version)
+#
+# synopsis
+#   sts = memalloc (index, size, type)
+#
+# description
+#   allocates space for array of size 'size' and type 'type'
+#
+# passed
+#   size - the number of elements of type 'type' to allocate
+#   type - the type of element to allocate (i.e. MEMINTEGER)
+#
+# returned
+#   index (type pointer)  - a value used by other memory allocation
+#                        routines
+#   sts                   - ERR if insufficient memory for allocation
+
+integer function memalloc (index, size, type)
+integer size
+integer type
+pointer index
+
+
+    if (! lib$get_vm (DATA_OFFSET  +  size * type, index))
+        {
+        memalloc = ERR
+    	index = INSUFFICIENTMEMORY
+        }
+
+    else
+    	{
+	# store relevant information about block
+
+	call blkmove(size, MEMINTEGER,
+			%val(index + SIZE_OFFSET))
+	call blkmove(type, MEMINTEGER,
+			%val(index + TYPE_OFFSET))
+        memalloc = OK
+	}
+
+    return
+
+end
+
+### memfree - free memory     (vax version)
+#
+# synopsis
+#   sts = memfree (index)
+#
+# description
+#   frees the memory area referenced by index
+#
+# passed
+#   index (type pointer) - the memory area to free
+# returned
+#   sts  - ERR if index is invalid
+
+integer function memfree (index)
+pointer index
+
+    integer size
+    integer type
+
+    memfree = ERR
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+	# get relevant information about the block to be deleted
+
+    	call blkmove(%val(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove(%val(index + TYPE_OFFSET), MEMINTEGER, type)
+
+    	call lib$free_vm (DATA_OFFSET  +  size * type, index)
+
+        memfree = OK
+    	}
+
+    return
+
+end
+
+### memget - read dynamically  allocated block     (vax version)
+#
+# synopsis
+#   sts = memget (index, array, number, position)
+#
+# description
+#   gets 'number' elements from the dynamically
+#   allocated array referenced by 'index', beginning
+#   with the 'position'th element, and puts them
+#   in 'array'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   number - the number of elements to get
+#   position - where to start getting elements from the memory area
+#
+# returned
+#   array - the array to put the elements in
+#   sts   - ERR if index or position is invalid
+
+integer function memget (index, array, number, position)
+pointer index
+character array(ARB)
+integer number
+integer position
+
+    integer truenumber
+    integer size
+    integer truesize             #number of elements in memory after 'position'
+    integer type
+
+    memget = ERR
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove(%val(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove(%val(index + TYPE_OFFSET), MEMINTEGER, type)
+
+        if ( position <= size )                 #position is in memory bounds
+            {
+
+            memget = OK
+            truesize = (size - position) + 1    #memory size after position
+
+            if (number <= truesize)             #wants less than available
+                truenumber = number
+            else
+                truenumber = truesize           #wants more than available
+
+            call blkmove(%val(index + DATA_OFFSET + type *
+                          (position - 1)), truenumber * type,  array)
+
+             }
+	}
+
+    return
+
+end
+
+### memput - write dynamically  allocated block     (vax version)
+#
+# synopsis
+#   sts = memput (index, array, number, position)
+#
+# description
+#   writes 'number' elements of the array 'array'
+#   into the dynamically allocated array referenced by
+#   'index', starting with the 'position'th element.
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   array - the array of elements to write in the memory area
+#   number - the number of elements to put
+#   position - where to start putting elements into memory area
+#
+# returned
+#   sts - ERR if position or index is invalid
+
+integer function memput (index, array, number, position)
+pointer index
+character array(ARB)
+integer number, position
+
+    integer truenumber
+    integer size
+    integer truesize             #number of elements in memory after position
+    integer type
+
+    memput = ERR
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove(%val(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove(%val(index + TYPE_OFFSET), MEMINTEGER, type)
+
+        if ( position <= size )               #position in memory bounds
+            {
+
+            memput = OK
+            truesize = (size - position) + 1  #elements after position
+
+            if (number <= truesize)           #wants less than available
+                truenumber = number
+            else                              #wants more than's available
+                truenumber = truesize
+
+	    call blkmove(array, truenumber * type, %val(index + 
+                          DATA_OFFSET + type * (position - 1)))
+            }
+
+	}
+
+
+    return
+
+end
+
+### memeget - read element in dynamically allocated block     (vax version)
+#
+# synopsis
+#   sts = memeget (index, element, number)
+#
+# description
+#   gets the 'number'th element of the dynamically
+#   allocated array referenced by 'index', and puts it
+#   in 'element'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   number - the number of the element to get
+#
+# returned
+#   element - will contain the requested element of the array
+#   sts     - ERR if position or index is invalid
+
+integer function memeget (index, element, number)
+pointer index
+character element(ARB)
+integer number
+
+    integer size
+    integer type
+
+    memeget = ERR
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove(%val(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove(%val(index + TYPE_OFFSET), MEMINTEGER, type)
+
+    	if (number <= size)
+            {
+            
+            memeget = OK
+    	    call blkmove(%val(index  +  DATA_OFFSET  +  type * (number - 1)),
+    		          type, element)
+            }
+
+	}
+
+    return
+
+end
+
+### memeput - write element in dynamically allocated block     (vax version)
+#
+# synopsis
+#   sts = memeput (index, element, number)
+#
+# description
+#   writes 'element' in the 'number'th position of the
+#   dynamically allocated array referenced by 'index'
+#
+# passed
+#   index (type pointer) - the index of the memory area
+#	(obtained from memalloc)
+#   element - the element to write in the memory area
+#   number - the position of the element to write in the memory area
+#
+# returned
+#   sts - ERR if position or index is invalid
+
+integer function memeput (index, element, number)
+pointer index
+character element(ARB)
+integer number
+
+    integer size
+    integer type
+
+    memeput = ERR
+
+    if (index != INSUFFICIENTMEMORY)
+    	{
+
+    	call blkmove(%val(index + SIZE_OFFSET), MEMINTEGER, size)
+    	call blkmove(%val(index + TYPE_OFFSET), MEMINTEGER, type)
+
+    	if (number <= size)
+            {
+
+            memeput = OK
+    	    call blkmove(element, type,
+          		%val(index  +  DATA_OFFSET  +  type * (number - 1)))
+            
+            }
+
+	}
+
+
+    return
+
+end
+
+
+### memcop - routine to copy dynamic memory
+#
+#  status = memcop( index1, offset1, index2, offset2, size )
+#
+#  given:
+#      index1      - address of dynamic memory segment
+#      offset1     - displacement in index1 of memory to copy
+#      index2      - address of destination of copy
+#      offset2     - displacement in index2 of destination
+#      size        - number of elements to move
+#
+#  returned:
+#      status      - OK | ERR ; error status
+#
+#   this routine copies a segment of memory from one dynamic
+#   segment to another dynamic segment
+
+integer function memcop( index1, ofset1, index2, ofset2, size )
+
+    integer index1
+    integer ofset1
+    integer index2
+    integer ofset2
+    integer size
+    integer size1
+    integer size2
+
+    integer type1       # length in "words" of elements in index1
+    integer type2       # length in "words" of elements in index2
+
+    define(DEBUG,)
+    ifdef( DEBUG )
+
+	if ( (index1 == INSUFFICIENTMEMORY) | (index2 == INSUFFICIENTMEMORY) )
+	    return( ERR )
+
+    enddef
+
+    call blkmove( %val( index1 + TYPE_OFFSET ), MEMINTEGER, type1 )
+    call blkmove( %val( index2 + TYPE_OFFSET ), MEMINTEGER, type2 )
+
+    ifdef( DEBUG )
+
+	call blkmove( %val( index1 + SIZE_OFFSET ), MEMINTEGER, size1 )
+	call blkmove( %val( index2 + SIZE_OFFSET ), MEMINTEGER, size2 )
+
+	if ( ((ofset1 + size - 1 ) > size1) | ((ofset2 + size - 1 ) > size2) )
+	    return( ERR )
+
+    enddef
+
+    call blkmove( %val( index1 + DATA_OFFSET + (( ofset1 - 1 ) * type1 )),
+                  size * type1,
+                  %val( index2 + DATA_OFFSET + (( ofset2 - 1 ) * type2 )) )
+
+    return( OK )
+end
+#-t-  vmemlb                    11290  ascii   05Jan84  07:58:50
+#-t-  vmemlb.all                18396  ascii   05Jan84  08:10:27
+#-h-  tbllb.all                 22601  ascii   05Jan84  08:10:30
+#-h-  tbllb.doc                  5278  ascii   05Jan84  08:01:50
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^tbllb(2)^%^tbllb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+tbllb - symbol table routines
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+call instal(name, def)
+status = lookup(name, def)
+status = nmuninstall(name)
+
+ind = nmfind(name)
+call nmadd(name, def)
+call nmcopy(ind, def)
+call nmdel(ind)
+nchar = nmdsiz(ind)
+call nmncopy(ind, name)
+nchar = nmnsiz(ind)
+
+status = nmgtnt(ind)
+call nmigtnt
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+"Tbllb" is a collection of routines used to maintain symbol tables. 
+The routines are used by tools like "macro", "roff" and "rat4".  In
+general, access to the package is via
+.bd
+"instal", "nmuninstall",
+and
+.bd
+"lookup"
+but these routines are constructed from more primitive routines
+which can be called directly if necessary. 
+.ne 3
+.sp
+The following conventions apply to all routine descriptions:
+.bd
+"Name"
+is a
+.ul
+string
+giving the name to be looked up or added.
+.bd
+"Def"
+is a
+.ul
+string
+giving the definition associated with a name or index.
+.bd
+"Ind"
+is an integer identifying an entry to the table routines.  It has
+meaning only to the table routines. 
+.ne 3
+.sp
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Instal
+adds a name and definition to the symbol table.  It is called as
+.sp
+.nf
+.in +4
+call instal(name, def)
+.sp
+.fi
+.in -4
+If "name" is already in the symbol table, the old definition is first
+deleted. 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Lookup
+searches the symbol table for a name and, if it is found, copies the
+associated definition to an array.  It is called as
+.sp
+.nf
+.in +4
+status = lookup(name, def)
+.sp
+.fi
+.in -4
+Status has the value "YES" if the name was found and "NO" otherwise.  "Def"
+must be long enough to hold the definition of "name". 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmuninstall
+removes the (most recent) definition of the name 'name'.
+It is called as
+.sp
+.nf
+.in +4
+status = nmuninstall(name)
+.sp
+.fi
+.in -4
+If there is no definition for the name 'name',
+nmuninstall returns NO.
+Otherwise, nmuninstall returns YES.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmfind
+is the primitive which looks up a name in the symbol table.  It is called
+as
+.sp
+.nf
+.in +4
+ind = nmfind(name)
+.sp
+.fi
+.in -4
+"Ind" is the definition index
+(used by nmcopy, nmdel, nmdsiz, nmncopoy, nmnsiz, and nmgtnt.)
+If the name isn't in the table, "ind" will be zero. 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmadd
+is the primitive which adds a new name and definition to the symbol table. 
+It is called as:
+.sp
+.nf
+.in +4
+call nmadd
+(name, def)
+.sp
+.fi
+.in -4
+If "name" is already in the table, nmadd will
+.ul
+not
+delete it.  However, nmfind will always return the most recent definition
+of a name so the old definition will be inaccessible until the new one
+is deleted (except though use of it's index number.) 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmdel
+is the primitive which deletes a name and definition from the symbol
+table.  It is called as:
+.sp
+.nf
+.in +4
+call nmdel(ind)
+.sp
+.fi
+.in -4
+If "ind" does not refer to something in the symbol table, bizarre
+program behavior is to be expected. 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmcopy
+is the primitive which copies the text of a definition from the
+symbol table to a local array.  It is called as:
+.sp
+.nf
+.in +4
+call nmcopy(ind, def)
+.sp
+.fi
+.in -4
+If "ind" doesn't refer to a symbol table entry or if "def" isn't
+long enough to hold the definition, the program won't work well. 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmdsiz
+is a primitive which returns the size (in characters, including the
+EOS) of the definition
+part of a symbol table entry.  It is called as:
+.sp
+.nf
+.in +4
+nchars = nmdsiz(ind)
+.sp
+.fi
+.in -4
+"Ind" should refer to a symbol table entry. 
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmncopy
+is the primitive which copies the text of a 
+.bd
+"name"
+to which the
+.bd
+"ind"
+identifies from the symbol table to a local array.  It is called as:
+.sp
+.nf
+.in +4
+call nmncopy(ind, name)
+.sp
+.fi
+.in -4
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmnsiz
+is the primitive which returns the size (in characters, including the
+EOS) of the
+.bd
+"name"
+part of a symbol table entry. It is called as:
+.sp
+.nf
+.in +4
+nchar = nmnsiz(ind)
+.sp
+.fi
+.in -4
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmgtnt
+is the primitive which gets and returns the index number of the next
+symbol definition in the symbol table. Status returns are OK and EOF;
+EOF is returned if there are no more entries. It should be noted that
+though all of the definitions will be produced by this routine, the
+order in which they are returned is undefined.
+.bd
+Important:
+It is required that the symbol table not be modified while nmgtnt
+is being used. If it is desired to modify the symbol table, nmigtnt
+must be called before nmgtnt can be used.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+.bd
+Nmigtnt
+is the primitive which resets
+.bd
+nmgtnt
+to the beginning of the symbol table.
+.in -6
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+roff(1), macro(1), rat4(1)
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Vern Paxton and Van Jacobson
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+On all machines, users of tbllb must link with "tbllb". However, on
+the Modcomp, users writing BCPL programs must link with "tbllib".
+
+#-t-  tbllb.doc                  5278  ascii   05Jan84  08:01:50
+#-h-  tbllb.inc                  2243  ascii   05Jan84  08:01:52
+#-h-  memsym                     1879  ascii   05Jan84  08:01:19
+## memsym - symbols definitions for memory allocation
+#nolist
+
+# revision history
+#
+# 01e 08Nov83 mam .Removed the data types(word,pointer).
+# 01d 12jul83 jc  .Ratfixed
+# 01c 09aug82 th  .Changed INSUFFICIENTMEMORY to 0 on the vax
+#                  (this is what an uninitialized variable is likely to have
+#                  in it)
+#                 .Added definitions for PDP_10
+# 01b 05Nov81 cal .Added revision history and turned off listing
+
+# portability note:
+#   dmlb.t assumes that the minimum unit is a character,
+#   and that all the 'MEMWORD', ...., definitions are in terms of
+#   characters
+
+ifdef (VAX)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,4)
+    define(MEMINTEGER,4)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,4)
+    define(MEMREAL,4)
+    define(MEMDOUBLEPRECISION,8)
+    define(MEMCOMPLEX,8)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+ifdef (MODCOMP)
+  
+  
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,1)
+    define(MEMREAL,2)
+    define(MEMDOUBLEPRECISION,4)
+    define(MEMCOMPLEX,4)
+  
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,-1)
+
+enddef
+ifdef (PDP_10)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+
+    # MEMCHARACTER could probably be -7 except for rat4sym, which
+    # tries to store things larger than seven bits in a character.
+    define(MEMCHARACTER,1)
+
+    define(MEMLOGICAL,1)
+    define(MEMREAL,1)
+    define(MEMDOUBLEPRECISION,2)
+    define(MEMCOMPLEX,2)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+
+#list
+#-t-  memsym                     1879  ascii   05Jan84  08:01:19
+#-h-  ctblhsh                     104  ascii   05Jan84  08:01:21
+## ctblhsh - hash table for tbllib
+#nolist
+
+integer hshtbl(HASHTABLESIZE)
+common /tblcom/ hshtbl
+
+#list
+#-t-  ctblhsh                     104  ascii   05Jan84  08:01:21
+#-t-  tbllb.inc                  2243  ascii   05Jan84  08:01:52
+#-h-  tbllb                     14690  ascii   05Jan84  08:01:53
+#### tbllb - symbol table package
+#
+# revision history
+#
+# 03b 18Jul83 jic .ratfixed.
+# 03a 25May82 cal .added nmncopy, nmnsiz, nmgtnt, and nmigtnt; changed
+#                  error messages into strings
+# 02a 20apr82 tb  .changed all routines that call memlb routines
+#                  to check status and abort if err. See v2a of
+#                  memlb. The routines changed were nmequal, nmdel
+#                  nmcopy, nmdsiz, nmlookup, and nminstall
+# 01g 07jan82 tb  .fixed initialization loop in 'hashname' to be
+#                  called 1 less time, so as not to overwrite the
+#                  hshtbl array
+# 01f 12nov81 th  .changed name of uninstall to nmuninstall
+# 01e 04sep81 th  .added uninstall
+# 01d 23jul81 ah  .alphabetized & added ### to headers
+# 01c 06jul81 vp  .renamed tbllb
+# 01b 23jun81 th  .modified hashname so it wouldn't cause
+#                  integer overflows
+# 01a 06Jun81 vp  .written.  Ratfor code based on bcpl version
+#
+#  These routines are part of a symbol table package used by
+# various software tools (macro, roff, rat4, etc.)
+#
+#  Routines in the package are:
+#     call instal(name,def)      define a name
+#     status = lookup(name,def)  retrieve a definition (YES if found)
+#     ind = nmfind(name)         lookup a name
+#     call nmadd(name, def)      add a name and its definition
+#     call nmcopy(ind, def)      copy the definition of a name
+#     call nmncopy(ind, name)    copy the key of a name
+#     call nmdel(ind)            delete a name
+#     nchar = nmdsiz(ind)        returns the size of a definition
+#     nchar = nmnsiz(ind)        returns the size of a key
+#     status = nmuninstall(name) remove refinition of name (YES if existed)
+#     status = nmgtnt(ind)       get index of next table entry
+#     call nmigtnt               reset nmgtnt to beginning of symbol table
+#
+#  All names and definitions are ratfor strings.  All indices are
+# addresses returned from the dynamic memory allocation routines,
+# and are therefore meaningless to the user.
+#
+#  The names are hashed and strung in a singly linked list from the
+# hash table entries.  The entry for each name is in the form:
+#    - next entry with same hash value (=ENDOFLIST if none)
+#    - length of name
+#    - length of definition
+#    - index of name
+#    - index of definition
+# where the name and definition indices are values returned from
+# the dynamic memory routines for the locations where the name
+# and definition strings are stored.
+#
+# implementation problems:
+#  Hashname will have to be changed if the machine does not allow
+# the user to mix character data type with integer data type
+#  Note that since this data structure mixes pointer types with
+# integers, it WILL NOT WORK if the 'pointer' data type is ever
+# changed from being 'integer'.
+
+ include memsym
+
+ define(ENDOFLIST,0)
+ define(ELINK,1)
+ define(ENAMESIZE,2)
+ define(EDEFSIZE,3)
+ define(ENAMEPTR,4)
+ define(EDEFPTR,5)
+ define(HASHTABLESIZE,229)	# should be prime
+ define(ESIZE,5)
+ define(MAXNAMESIZE,100)
+ define(BIG_NUMBER,8192)	# should be <= maximum integer / 2 - 256
+
+### hashname - returns hash index for given name with given length
+#
+# synopsis
+#
+#   i = hashname(name, len)
+#
+#	name - character string containing name to hash
+#	len - length of name
+#	i - hash index
+#
+integer function hashname(name, len)
+character name(ARB)
+integer len
+
+    integer hash, i, init
+    include ctblhsh
+    data init /YES/
+
+    hash = 0
+    if (init == YES)
+	{
+	for (i = 1; i <= HASHTABLESIZE; i = i + 1)
+	    hshtbl(i) = ENDOFLIST
+	init = NO
+	}
+
+    for (i = 1; i <= len; i = i + 1)
+	{
+	# prevents integer overflow
+	hash = mod((hash * 2) + name(i), BIG_NUMBER)
+	}
+
+    hash = mod(hash, HASHTABLESIZE)
+
+    if (hash < 0)
+	hash = -hash
+    return hash + 1	# 0 is not a legal value for Fortran array indices
+end
+
+### instal - add a name and definition
+#
+# synopsis
+#
+#   call instal(name,def)
+#
+#	name - name use as key
+#	def - definition of key
+#
+subroutine instal(name, def)
+character name(ARB), def(ARB)
+
+    integer ind, nmfind
+
+    # check if the name is defined and delete the old copy if so.
+    ind = nmfind(name)
+    if (ind != ENDOFLIST)
+	call nmdel(ind)
+
+    call nmadd(name, def)
+    return
+end
+
+### lookup - returns a name's definition in passed string; function
+#
+# synopsis
+#
+#   status = lookup(name, def)
+#
+#	name - character string containing name to look up
+#	def - returned character string containing defintion
+#	status - return status; YES if the name was in the table, else NO
+#
+integer function lookup(name, def)
+character name(ARB), def(ARB)
+
+    integer ind, nmfind
+
+    ind = nmfind(name)
+
+    if (ind == ENDOFLIST)
+	return NO
+
+    call nmcopy(ind, def)
+    return YES
+end
+
+### nmadd - add a name and its definition
+#
+# synopsis
+#
+#   call nmadd(name, def)
+#
+#	name - character string containing name to use as key
+#	def - character string containing definition
+#
+#   1 is added to the strings' lengths so that the EOS is
+#   stored along with the rest of the string
+subroutine nmadd(name, def)
+character name(ARB), def(ARB)
+
+    integer length
+
+    call nminstall(name, length(name) + 1, def, length(def) + 1)
+    return
+end
+
+### nmcopy - copy definition at index into passed string
+#
+# synopsis
+#
+#   call nmcopy(ind, def)
+#
+#	ind - index of defintion to get
+#	def - character string to recieve definition
+#
+subroutine nmcopy(ind, def)
+integer ind
+character def(ARB)
+
+    integer defptr			# index of definition entry
+    integer ds				# size of definition entry
+    integer memeget			# gets an element from entry
+    integer memget			# gets an entry froom dynamic mem
+    string dserr "tbllb$nmcopy: Failed to get definition size."
+    string dptrerr "tbllb$nmcopy: Failed to get definition ptr."
+    string deferr "tbllb$nmcopy: Failed to get definition from symbol table."
+
+    if (memeget(ind, defptr, EDEFPTR) == ERR)
+        call error(dptrerr)
+    if (memeget(ind, ds, EDEFSIZE) == ERR)
+        call error(dserr)
+    if (memget(defptr, def, ds, 1) == ERR)
+        call error(deferr)
+    return
+end
+
+### nmncopy - copy name of key
+#
+# synopsis
+#
+#   call nmncopy(ind, def)
+#
+#	ind - index of key name to get
+#	def - character string to recieve key name
+#
+subroutine nmncopy(ind, name)
+integer ind
+character name(ARB)
+
+    integer namptr			# index of key entry
+    integer ds				# size of key entry
+    integer memeget, memget
+    string dserr "tbllb$nmncopy: Failed to get key size."
+    string dptrerr "tbllb$nmncopy: Failed to get key ptr."
+    string keyerr "tbllb$nmncopy: Failed to get key from symbol table."
+
+    if (memeget(ind, namptr, ENAMEPTR) == ERR)
+        call error(dptrerr)
+    if (memeget(ind, ds, ENAMESIZE) == ERR)
+        call error(dserr)
+    if (memget(namptr, name, ds, 1) == ERR)
+        call error(keyerr)
+    return
+end
+
+### nmdel - deletes table entry of given index
+#
+# synopsis
+#
+#   call nmdel(ind)
+#
+#	ind - index number of entry to delete
+#
+subroutine nmdel(ind)
+integer ind
+
+    integer hshind		# hash of name in symbol table entry, 'ind'
+    integer hashname		# hashes name in sym tbl entry
+    integer entry(ESIZE)	# symbol table entry for 'ind'
+    integer lstind		# last index checked in linked list
+    integer ind2		# next index in linked list
+    character name(MAXNAMESIZE)	# name found in sym tbl entry 'ind'
+    integer memeget, memget, memfree
+    string gtderr "tbllb$nmdel: Failed to get symbol table entry to delete."
+    string gtnerr "tbllb$nmdel: Failed to get symbol table entry for name."
+    string gtlerr "tbllb$nmdel: Failed to get linked symbol table entry."
+    string fdterr "tbllb$nmdel: Failed link symbol table entries."
+    string ffterr "tbllb$nmdel: Failed to free symbol table entry space."
+    string ffserr "tbllb$nmdel: Failed to free symbol table name space."
+    string ffderr "tbllb$nmdel: Failed to free symbol table definition space."
+
+    include ctblhsh
+
+    if (ind != ENDOFLIST)
+        {
+        if (memget(ind, entry, ESIZE, 1) == ERR)
+	    call error(gtderr)
+
+        if (memget(entry(ENAMEPTR), name, entry(ENAMESIZE), 1) == ERR)
+	    call error(gtnerr)
+
+        hshind = hashname(name, entry(ENAMESIZE))	# hash name
+
+        if (hshtbl(hshind) == ind)			# found entry already
+            hshtbl(hshind) = entry(ELINK)		# link around 'ind'
+
+        else
+            {
+            ind2 = hshtbl(hshind)
+
+            while (ind2 != ind)
+                {
+                lstind = ind2
+                if (memeget(ind2, ind2, ELINK) == ERR)
+		    call error(gtlerr)
+                }
+
+            if (memeput(lstind, entry(ELINK), ELINK) == ERR)
+		call error(fdterr)
+            }
+
+        if (memfree(ind) == ERR)
+	    call error(ffterr)
+
+        if (memfree(entry(ENAMEPTR)) == ERR)
+	    call error(ffserr)
+
+        if (memfree(entry(EDEFPTR)) == ERR)
+	    call error(ffderr)
+        }
+    return
+end
+
+### nmdsiz - returns the size of the definition of an index
+#
+integer function nmdsiz(ind)
+integer ind
+
+    integer memeget
+    string memerr "tbllb$nmdsiz: Failed to get definition size."
+
+    if (memeget(ind, nmdsiz, EDEFSIZE) == ERR)
+        call error(memerr)
+    return
+end
+
+### nmnsiz - returns the size of a key
+#
+integer function nmnsiz(ind)
+integer ind
+
+    integer memeget
+    string memerr "tbllb$nmnsiz: Failed to get definition size."
+
+    if (memeget(ind, nmnsiz, ENAMESIZE) == ERR)
+        call error(memerr)
+    return
+end
+
+### nmigtnt - reset nmgtnt to start of symbol table
+### nmgtnt - get next index number from symbol table
+#
+# synopsis
+#
+#   status = nmgtnt(ind)
+#   call tnigtnt
+#
+#	ind - index number of next entry in the symbol table
+#	status - EOF if at end of symbol table, else OK
+#
+integer function nmgtnt(ind)
+integer ind, dummy
+
+    integer hindex, mindex
+    include ctblhsh
+    string memerr "tbllb$nmgtnt: Failed to memeget pointer."
+    data hindex /1/		# index first entry in hash table
+    data mindex /ENDOFLIST/	# memlb pointer to entry
+
+    for (ind = ENDOFLIST; hindex <= HASHTABLESIZE; hindex = hindex + 1)
+	{
+	if ((hshtbl(hindex) == ENDOFLIST) & (mindex == ENDOFLIST))
+	    next		# try next hash table element
+	if (mindex == ENDOFLIST)
+	    {
+	    mindex = hshtbl(hindex) # first time with this element
+	    ind = mindex
+	    break
+	    }
+	if (memeget(mindex, mindex, ELINK) == ERR)
+	    call error(memerr)
+	if (mindex != ENDOFLIST)
+	    {
+	    ind = mindex
+	    break
+	    }
+	}
+    if (ind == ENDOFLIST)
+	return EOF
+    ind = mindex
+    return OK
+
+entry nmigtnt(dummy)
+
+    hindex = 1
+    mindex = ENDOFLIST
+    return
+end
+
+### nmequal - returns YES if the name corresponding to a given index
+#          is equivalent to a given name with a given length
+# synopsis
+#
+#	ind - symbol table entry index
+#	name - name to check
+#	len - length of name to check
+#
+integer function nmequal(ind, name, len)
+integer ind
+character name(ARB)
+integer len
+
+    integer equal			# checks names for equality
+    integer entry(ESIZE)		# sym tbl entry for 'ind'
+    integer memget			# gets sym tbl entries
+    character tmp(MAXNAMESIZE)		# name in sym tbl
+    string symerr "tbllb$nmequal: Failed to get symbol table entry."
+    string namerr "tbllb$nmequal: Failed to get symbol table entry name."
+
+    nmequal = NO
+
+    if (memget(ind, entry, ESIZE, 1) == ERR)
+	call error(symerr)
+
+    if (entry(ENAMESIZE) == len)
+        {
+        if (memget(entry(ENAMEPTR), tmp, len, 1) == ERR)
+            call error(namerr)
+        nmequal = equal(tmp, name)
+        }
+    return 
+end
+
+### nmfind - returns index of given string
+#
+integer function nmfind(str)
+character str(ARB)
+
+    integer nmlookup, length
+
+    return nmlookup(str, length(str) + 1)	# add 1 to length so EOS
+						# is included in name
+end
+
+### nminstall - installs a name of given length and its
+#             corresponding definition string of given length
+#
+subroutine nminstall(name, ns, def, ds)
+character name(ARB)			# name to install
+integer ns				# size of name to install
+character def(ARB)			# definition of name
+integer ds				# size of definition
+
+    integer hashname			# hashes name
+    integer hshind			# hash of name
+    integer memalloc			# allocates dynamic memory for install
+    integer memput			# puts info in dynamic memory space
+    integer tmp(ESIZE)			# temporary sym tbl entry
+    string memmsg "tbllb$nminstall: Dynamic table space overflowed."
+    string tmperr "tbllb$nminstall: Failed to install new symbol table entry."
+    string nmerr "tbllb$nminstall: Failed to put name in symbol table."
+    string dferr "tbllb$nminstall: Failed to put definition in symbol table."
+
+    include ctblhsh
+
+    if (ns != 0)
+        {
+        hshind = hashname(name, ns)
+        tmp(ELINK) = hshtbl(hshind)             # don't lose linked list
+
+        if (memalloc(hshtbl(hshind), ESIZE, MEMINTEGER) == ERR)
+            call panic(memmsg)
+
+        tmp(ENAMESIZE) = ns
+        tmp(EDEFSIZE) = ds
+
+        if (memalloc(tmp(ENAMEPTR), ns, MEMCHARACTER) == ERR)
+            call panic(memmsg)
+
+        if (memalloc(tmp(EDEFPTR), ds, MEMCHARACTER) == ERR)
+            call panic(memmsg)
+
+        if (memput(hshtbl(hshind), tmp, ESIZE, 1) == ERR)
+            call error(tmperr)
+
+        if (memput(tmp(ENAMEPTR), name, ns, 1) == ERR)
+            call error(nmerr)
+
+        if (memput(tmp(EDEFPTR), def, ds, 1) == ERR)
+            call error(dferr)
+        }
+     return
+ end
+
+### nmlookup - returns the index of a name definition with given length
+#
+integer function nmlookup(name, len)
+character name(ARB)                 # name to look up
+integer len                         # length of name to look up
+
+    integer ind                     # index of symbol table entry
+    integer hashname                # hashes name
+    integer nmequal                 # checks if names are equal
+    integer memeget                 # gets next index in linked list
+    string linkerr "tbllb$nmlookup: Failed to get linked symbol table entry."
+
+    include ctblhsh
+
+    ind = ENDOFLIST
+
+    if (len != 0)
+        {
+        ind = hshtbl(hashname(name, len))
+
+        while (ind != ENDOFLIST)
+            {
+            if (nmequal(ind, name, len) == YES)
+                break
+
+            if (memeget(ind, ind, ELINK) == ERR)
+                call error(linkerr)
+            }
+        }
+     return ind
+end
+
+### nmuninstall - remove definition of symbol
+#
+# status = nmuninstall (name)
+#
+# description
+#   removes (most recent) definition of symbol 'name'
+#
+# passed
+#   name - symbol to remove
+#
+# returned
+#   status - YES if there was such a symbol, NO if not
+#
+integer function nmuninstall(name)
+character name(ARB)
+
+    integer nmfind
+    integer ind
+
+    ind = nmfind (name)
+
+    if (ind == ENDOFLIST)
+	nmuninstall = NO
+    else
+	{
+	nmuninstall = YES
+	call nmdel (ind)
+	}
+    return
+end
+#-t-  tbllb                     14690  ascii   05Jan84  08:01:53
+#-t-  tbllb.all                 22601  ascii   05Jan84  08:10:30
+#-h-  evalb.all                 11992  ascii   05Jan84  08:10:32
+#-h-  evalb.doc                  2913  ascii   05Jan84  08:03:43
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^evalb(2)^%^evalb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+evalb - expression evaluation routine library
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+   status = bsep( ptr )
+   call cpush( opr, ptr )
+   status = evalexpr( exp, result )
+   status = lprnp( ptr )
+   call putreal( number, minwid )
+   value = rev( arg1, opr, arg2 )
+   call rpush( r4, ptr )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+Evalb is the standard software tools expression evaluation library.
+The routines it contains are used by such tools as macro, roff, rofmac,
+etc.
+.ne 3
+.sp
+In the following section, each routine is described.
+.sp
+.nf
+.bd
+bsep - whether 'ptr' is at the beginning of a
+   sub-expression or not if ptr is zero, or if it points to a 
+   left paren, then bsep returns .true.; otherwise, it is 
+   .false.
+passed
+   ptr - integer, assumed to be a pointer into
+   cstk or typstk.
+returned
+   status - .true. or .false.
+
+.bd
+cpush - push an operator onto the stack
+   pushes the operator 'opr' onto the stack 'cstk' at
+   'ptr', and the value OP onto the stack 'typstk' at
+   'ptr'.
+passed
+   opr - the operator to be pushed onto 'cstk'
+   ptr - integer, assumed to be a pointer into 'cstk'
+         and 'typstk'
+
+.bd
+evalexpr - evaluate an arithmetic expression
+   in a string evaluates the arithmetic expression in the
+   string 'exp' and returns the resulting value
+   in the real 'result'.  If all went well, evalexpr
+   itself returns .true.;  if not, it returns .false.
+   and 'result' is not set. Valid operators are PLUS,
+   MINUS, STAR, SLASH, and CARET.
+passed
+   exp - the string to be evaluated as an arithmetic
+         expression
+returned
+   result - the value of 'exp' (real)
+   status - .true. or .false.
+
+.bd
+lprnp - whether ptr points to a left paren or not
+   if typstk(ptr) is not equal to OP, or if cstk(ptr)
+   is not a left paren, lprnp is .false.; otherwise,
+   it is .true.
+passed
+   ptr - integer, assumed to be a pointer into
+          typstk and cstk.
+returned
+   status - .true. or .false.
+
+.bd
+putreal - output a real number
+   outputs the real number 'number', in a field of
+   minimum width 'minwid', onto SDTOUT.
+passed
+   number - real number to be output
+   minwid - the minimum size of the field in which
+            'number' is to be output
+.bd
+rev - evaluate real binomial
+   evaluates the expression
+          arg1 opr arg2
+passed
+   arg1, arg2 - real
+   opr - character, representing the operation
+         to be performed
+returned
+   value - real
+
+.bd
+rpush - push a real onto the stack.
+   pushes the real 'r4' onto the stack 'rstk' at 'ptr',
+   and the value RL onto the stack 'typstk' at 'ptr'.
+passed
+   r4 -  real, to be pushed onto the stack
+   ptr -  integer, assumed to be a pointer into
+          rstk and typstk
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+roff(1), macro(1), rofmac(1) (tools which use these routines)
+
+#-t-  evalb.doc                  2913  ascii   05Jan84  08:03:43
+#-h-  evalb.inc                   373  ascii   05Jan84  08:03:45
+#-h-  evalcomn                    243  ascii   05Jan84  08:03:19
+## evalcomn - unknown include file
+#nolist
+
+    integer*4 istk(STACKSIZE)
+    real*4    rstk(STACKSIZE)
+    integer*4 cstk(STACKSIZE)
+
+    integer typstk(STACKSIZE)
+
+    common /expstk/ istk, typstk
+
+    equivalence ( istk, rstk, cstk )
+#list
+#-t-  evalcomn                    243  ascii   05Jan84  08:03:19
+#-t-  evalb.inc                   373  ascii   05Jan84  08:03:45
+#-h-  evalb                      8316  ascii   05Jan84  08:03:46
+# evalb - expression evaluation routine library.
+#
+# (used by macro, roff, rofmac, etc.)
+#
+#
+# Modifications
+#
+#   v01j 09dec83 sd  removed define for NOIMPLICIT, already defined in ratp1
+#		     declared lprnp as logical in BSEP module
+#   v01i 15jul83 jic ratfixed
+#   v01h 25may82 njd changed type to character
+#   v01g 23Sep82 rc  moved ctor and rtoc to fttlb
+#   v01f 19Nov81 cal added fudge factor in rtoc to correct rounding errors
+#   v01e 11sep81 ah  moved ctoi to fttlb
+#   v01d 25aug81 vp  replaced rtoc with portable version written by vj
+#
+#   v01c 17jul81 ah  moved putspaces to fttlb
+#                    changed name to evalb
+#
+#   v01b 05oct80 vj  changed from include to library.
+#                    changed include stmts for new ratfor.
+#
+#   v01a 01jul80 jp&vj written.
+
+
+define(STACKSIZE,30)
+define(OP,0)
+define(INT,1)
+define(RL,2)
+
+### bsep - Whether ptr is at the beginning of a sub-expression or not.
+#
+# synopsis
+#   status = bsep ( ptr )
+#
+# description
+#   if ptr is zero, or if it points to a left paren, then bsep
+#   returns .true.; otherwise, it is .false.
+#
+# passed
+#   ptr - integer, assumed to be a pointer into cstk or typstk.
+#
+# returned
+#   status - .true. or .false.
+
+logical function bsep ( ptr )
+NOIMPLICIT
+integer ptr
+logical lprnp
+
+    include evalcomn
+
+    if ( ptr == 0 )
+        bsep = .true.
+    else
+        bsep = lprnp ( ptr )
+
+    return
+end
+
+### cpush - push an operator onto the stack.
+#
+# synopsis
+#   call cpush ( opr, ptr )
+#
+# description
+#   pushes the operator 'opr' onto the stack 'cstk' at 'ptr', and
+#   the value OP onto the stack 'typstk' at 'ptr'.
+#
+# passed
+#   opr - the operator to be pushed onto 'cstk'
+#   ptr - integer, assumed to be a pointer into 'cstk' and 'typstk'
+
+subroutine cpush ( opr, ptr )
+NOIMPLICIT
+integer opr
+integer ptr
+
+    include evalcomn
+
+    if ( ptr >= STACKSIZE )
+        call error ( "  stack overflow." )
+    ptr = ptr + 1
+    cstk ( ptr ) = opr
+    typstk ( ptr ) = OP
+
+    return
+end
+
+### evalexpr - Evaluate an arithmetic expression in a string.
+#
+# synopsis
+#   status = evalexpr ( exp, result )
+#
+# description
+#   evaluates the arithmetic expression in the string 'exp' and
+#   returns the resulting value in the real 'result'.  If all
+#   went well, evalexpr itself returns .true.;  if not,
+#   it returns .false. and 'result' is not set.
+#   Valid operators are PLUS, MINUS, STAR, SLASH, and CARET.
+#
+# passed
+#   exp - the string to be evaluated as an arithmetic expression
+#
+# returned
+#   result - the value of 'exp' (real)
+#   status - .true. or .false.
+
+logical function evalexpr ( exp, result )
+NOIMPLICIT
+character exp(ARB)
+real result
+
+    character type, c
+    integer idx, ptr
+    real r4, ctor, rev
+    logical bsep, lprnp
+
+    include evalcomn
+
+    evalexpr = .false.
+    ptr = 0
+    idx = 1
+
+    while ( exp(idx) != EOS )
+        {
+        c = exp(idx)
+        if ( ( type ( c ) == DIGIT ) |
+             ( c == '.' & type( exp(idx+1) ) == DIGIT ) |
+             ( c == '-' & idx == 1 ) |
+             ( c == '-' & typstk(ptr) == OP ) )
+            {
+            r4 = ctor ( exp, idx )
+            if ( bsep ( ptr ) )
+                call rpush ( r4, ptr )
+            else if ( typstk(ptr) != OP )
+                call error ( " missing operator." )
+            else
+                {
+                if ( ptr <= 1 )
+                    call error ( "  no first operand." )
+                if ( typstk(ptr-1) == OP )
+                    call error ( "  two operators." )
+                rstk(ptr-1) = rev ( rstk(ptr-1), cstk(ptr), r4 )
+                ptr = ptr - 1
+                }
+            }
+        else if ( c=='+' | c=='-' | c=='*' |
+                  c=='/' | c=='^' )
+            {
+            if ( bsep ( ptr ) )
+                call error ( " missing first operand." )
+            if ( typstk(ptr) == OP )
+                {
+                call error ( " two operators in a row." )
+                }
+            call cpush ( c, ptr )
+            idx = idx + 1
+            }
+        else if ( c == '(' )
+            {
+            if ( ! bsep ( ptr ) )
+                if ( typstk(ptr) != OP )
+                    {
+                    call error(" left paren illegal after operand." )
+                    }
+            call cpush ( c, ptr )
+            idx = idx + 1
+            }
+        else if ( c == ')' )
+            {
+            if ( bsep ( ptr ) )
+                {
+                call error ( " empty sub-expression." )
+                }
+            if ( typstk(ptr) == OP )
+                {
+                call error ( " missing second operand." )
+                }
+            if ( ptr <= 1 )
+                {
+                call error ( " too many right parens." )
+                }
+            if ( ! lprnp ( ptr-1 ) )
+                call error ( "  left paren lost." )
+            if ( bsep ( ptr-2 ) )
+                {
+                rstk(ptr-1) = rstk(ptr)
+                typstk(ptr-1) = RL
+                ptr = ptr - 1
+                }
+            else
+                if ( typstk(ptr-2) != OP )
+                    call error ( "  bad left paren." )
+                else if ( ptr <= 3 )
+                    call error ( "  no first operand." )
+                else
+                    {
+                    rstk(ptr-3) = rev(rstk(ptr-3),cstk(ptr-2),rstk(ptr))
+                    ptr = ptr - 3
+                    }
+            idx = idx + 1
+            }
+        else if ( c == ' ' )
+            {
+            idx = idx + 1
+            }
+        else
+            break
+        }
+
+    if ( ptr != 1 | typstk(1) == OP )
+        call error ( " badly terminated expression." )
+
+    else
+        if ( typstk(1) == RL )
+            {
+            result = rstk(1)
+            evalexpr = .true.
+            }
+        else
+            call error ( "  unknown type on stack." )
+
+    return
+end
+
+### lprnp - Whether ptr points to a left paren or not.
+#
+# synopsis
+#   status = lprnp ( ptr )
+#
+# description
+#   if typstk(ptr) is not equal to OP, or if cstk(ptr) is not a left paren,
+#   lprnp is .false.; otherwise, it is .true.
+#
+# passed
+#   ptr - integer, assumed to be a pointer into typstk and cstk.
+#
+# returned
+#   status - .true. or .false.
+
+logical function lprnp ( ptr )
+NOIMPLICIT
+integer ptr
+
+    include evalcomn
+
+    if ( typstk(ptr) != OP )
+        lprnp = .false.
+    else
+        if ( cstk(ptr) == '(' )
+            lprnp = .true.
+        else
+            lprnp = .false.
+
+    return
+end
+
+### putreal - Output a real number.
+#
+# synopsis
+#   call putreal ( number, minwid )
+#
+#  DESCRIPTION:
+#   outputs the real number 'number', in a field of minimum width
+#   'minwid', onto SDTOUT.
+#
+# passed
+#   number - real number to be output
+#   minwid - the minimum size of the field in which 'number' is
+#            to be output
+
+subroutine putreal ( number, minwid )
+NOIMPLICIT
+real number
+integer minwid
+
+    character chars(MAXLINE)
+    integer rtoc, i, numc
+
+    numc = rtoc ( number, chars, MAXLINE )
+    call putspaces ( minwid - (numc-1) )
+    call putlin ( chars, STDOUT )
+
+    return
+end
+
+### rev - evaluate real binomial
+#
+# synopsis
+#   value = rev ( arg1, opr, arg2 )
+#
+# description
+#   evaluates the expression
+#          arg1 opr arg2
+#
+# passed
+#   arg1, arg2 - real
+#   opr - character, representing the operation to be performed
+#
+# returned
+#   value - real
+
+real function rev ( arg1, opr, arg2 )
+NOIMPLICIT
+real arg1, arg2
+integer*4 opr
+
+    if ( opr == '+' )
+        rev = arg1 + arg2
+    else if ( opr == '-' )
+        rev = arg1 - arg2
+    else if ( opr == '*' )
+        rev = arg1 * arg2
+    else if ( opr == '/' )
+        rev = arg1 / arg2
+    else if ( opr == '^' )
+        rev = arg1 ** arg2
+    else
+        call error ( "  unknown operator." )
+
+    return
+end
+
+### rpush - push a real onto the stack.
+#
+# synopsis
+#   call rpush ( r4, ptr )
+#
+# description
+#   pushes the real 'r4' onto the stack 'rstk' at 'ptr', and the value RL
+#   onto the stack 'typstk' at 'ptr'.
+#
+# passed
+#   r4 -  real, to be pushed onto the stack
+#   ptr -  integer, assumed to be a pointer into rstk and typstk
+
+subroutine rpush ( r4, ptr )
+NOIMPLICIT
+real r4
+integer ptr
+
+    include evalcomn
+
+    if ( ptr >= STACKSIZE )
+        call error ( "  stack overflow." )
+    ptr = ptr + 1
+    rstk ( ptr ) = r4
+    typstk ( ptr ) = RL
+
+    return
+end
+
+#-t-  evalb                      8316  ascii   05Jan84  08:03:46
+#-t-  evalb.all                 11992  ascii   05Jan84  08:10:32
+#-h-  bslb.all                  35966  ascii   05Jan84  08:10:35
+#-h-  bslb.doc                  11244  ascii   05Jan84  08:05:50
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^bslb(2)^%^bslb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+bslb - bit-string package
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+include "bsdef"
+integer bsp, bsp1, bsp2, bsp3, bitnum, bsindx, numints, bwnum
+integer bitword, numbits, val, bit
+integer bsvec1(MAX_BS_SIZE), bsvec2(MAX_BS_SIZE)
+
+integer bsloopinit, bsnumbits, bsnumints
+logical bsareq, bsbtnc, bsbtst, bsempty, bsequal, bsnext
+logical bstestbit
+
+call bsand( bsp1, bsp2, bsp3 )
+bitarrays_are_equal = bsareq( bsvec1, bsvec2, numints )
+call bsbclr( bsp, bitnum )
+call bsbset( bsp, bitnum )
+bit_was_set = bsbtnc( bsp, bitnum )
+bit_is_set = bsbtst( bsp, bitnum )
+call bscomp( bsp )
+call bscopy( bsp1, bsp2 )
+call bsdestroy( bsp )
+bitstring_is_empty = bsempty( bsp )
+call bsendloop( bsindx )
+bitstrings_are_equal = bsequal( bsp1, bsp2 )
+call bsgetbs( bsp1, bsvec1, numints )
+call bsgetword( bsp, bwnum, bitword )
+call bsinit( bsp, numbits )
+call bslbinit
+bsindx = bsloopinit( bsp )
+call bslppos( bsindx, bitnum )
+call bsmkcopy( bsp1, bsp2 )
+another_element_found = bsnext( bsindx, val )
+numbits = bsnumbits( bsp )
+numints = bsnumints( bsp )
+call bsor( bsp1, bsp2, bsp3 )
+call bsputbs( bsp1, bsvec1, numints )
+call bsputword( bsp, bwnum, bitword )
+call bsresetbit( bitword, bit )
+call bssetbit( bitword, bit )
+call bsstats
+bit_set = bstestbit( bitword, bit )
+call bsxor( bsp1, bsp2, bsp3 )
+call bszero( bsp )
+BS_BITNUM_DECOMP( bitnum, bitword, bit )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+.ne 3
+.sp
+These routines implement a relatively fast set package based on
+bit strings.  Bit strings are sets in which potential set elements have
+associated with them a non-negative integer.  If the bit corresponding
+to a given potential set element is set in a bit string, then the potential set
+element is considered to be present in the set.  If the bit is reset, then the
+potential set element is considered to not be in the set.
+.ne 3
+.sp
+To use this package, the routine
+.bd
+bslbinit
+must be called. 
+Two types of bit strings may be used, and they
+are referred to in this document as
+.bd
+bitstrings
+and
+.bd
+bitarrays.
+.bd
+Bitstrings
+are dynamic objects created by calls to
+.bd
+bsinit
+by specifying how large a bitstring is desired (in bits). 
+A "bitstring pointer" (an integer type) is returned which can
+be passed to other routines in the package to do various operations
+on the bitstring.
+.bd
+Bitarrays
+are (presumably) static objects which
+are declared as integer arrays.  The array can be passed to various
+routines to have bit operations done on its contents.  Conversion
+between these two representations is facilitated by the
+.bd
+bsgetbs
+and
+.bd
+bsputbs
+routines.  Bitarrays are not fully supported, and should only be
+used when fast, simple operations are desired.
+.ne 3
+.sp
+The include file
+.bd
+bsdef
+declares the macro
+.bd
+BS_BITNUM_DECOMP
+(see below) for use with bitarrays.
+The file also contains three defines of user-interest:
+.bd
+BITS_IN_INTEGER
+is the number of bits which can be stored in an integer value. 
+.bd
+MAX_BS_SIZE
+is the largest size (in integer words) that a
+.bd
+bitstring
+can be (there is no limit on the size of
+.bd
+bitarrays).
+Arrays used in calls to
+.bd
+bsgetbs
+and
+.bd
+bsputbs
+should be declared to be this size.  Finally,
+.bd
+BS_MAX_LOOP_NESTING
+is the greatest level to which bitstring loops can be nested (see
+.bd
+bsloopinit
+below).  The file need not be included if these defines are not needed.
+.ne 3
+.sp
+The routines and their functions:
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsand	Produces the bit-wise "and" (intersection) of bitstrings bsp1 and bsp2
+in bitstring bsp3.  All bitstrings must have been previously initialized, must
+be the same size,
+and can all be the same bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsareq	Returns true if two bitarrays, whose size in integer words is given by
+the numints parameter, are equal, false otherwise.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsbclr	Clears a bit in a bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsbset	Sets a bit in a bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsbtnc	Returns true if a specified bit is set in a bitstring, false otherwise.
+In any case, the bit is reset.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsbtst	Returns true if a specified bit is set in a bitstring, false otherwise.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bscomp	Complements all the bits in a bit string (set negation).
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bscopy	Copies bitstring bsp1 into bitstring bsp2, which must have already been
+initialized.  The bitstrings must contain the same number of bits.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsdestroy	Deallocates the storage for a bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsempty	Returns true if a bitstring is empty, false otherwise.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsendloop	Terminates a sorted search through a bitstring.  Used in conjunction
+with
+.bd
+bsloopinit
+and
+.bd
+bsnext.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsequal	Returns true if two bitstrings are equal, false otherwise.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsgetbs	Returns the bitarray representation of a given bitstring, and the
+number of integer words the bitarray is in size.  Companion routine
+with
+.bd
+bsputbs.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsgetword	Returns the specified bitword from a given bitstring.  Used in conjunction
+with
+.bd
+BS_BITNUM_DECOMP.
+Companion routine with
+.bd
+bsputword.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsinit	Creates a bitstring large enough to hold the specified number of bits. 
+A pointer to the bitstring is returned in bsp.  The bitstring is initially
+empty (all bits reset).  Enough room is allocated for bits numbered from
+zero to numbits (thus, for example, if "numbits" is 10, space is allocated
+for bits 0 thru 10, and the bitstring set can hold 11 distinct elements).
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bslbinit	Initializes the bit string library.  Must be called before any other
+routines.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsloopinit	Prepares for a sorted loop through a bitstring.  An index is returned as
+the function value.  This index is repeatedly passed to
+.bd
+bsnext
+to return the bit positions of set bits in the bitstring, from the lowest
+numbered bit to the highest, starting with bit 0.  Loops should be terminated
+by calls to
+.bd
+bsendloop
+with the index as argument.  Up to BS_MAX_LOOP_NESTING bitstring loops
+may be active at one time.  The loops needn't be nested (i.e. calls
+to
+.bd
+bsnext
+may be made with different indices interspersed), but optimal speed
+results when bitstring loops are nested.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bslppos	Sets a bit position for the next call to
+.bd
+bsnext
+to begin at.  For example,
+.sp
+.nf
+.in +4
+call bslppos( setindx, 24 )
+.sp
+.fi
+.in -4
+would set things up so that the next time "setindx" was passed in a
+call to
+.bd
+bsnext,
+the routine would begin searching for a set bit starting with bit
+24.  If bit 24 was reset, it would then test bit 25, 26, ...  If
+all subsequent bits were reset,
+.bd
+bsnext
+would fail (return false).  It would
+.ul
+not
+search bits numbered lower than 24.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsmkcopy	Creates a copy of a bitstring.  bsp2 should
+.ul
+not
+already be initalized.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsnext	Returns in val the position of the next bit set in the bitstring associated
+with bsindx by a previous call to
+.bd
+bsloopinit.
+Returns true if there was another set bit, false otherwise.  For example,
+.sp
+.nf
+.in +4
+for ( i = bsloopinit( dataset );
+      bsnext( i, dataval ); )
+    call printf( "%d@n", dataval )
+.sp
+.fi
+.in -4
+will write out, in increasing order, the numbers of all the elements in dataset.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsnumbits	Returns the number of bits allocated in a bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsnumints	Returns the number of integer words allocated for storage of a bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsor	Produces the bit-wise "or" (union) of bitstrings bsp1 and bsp2 in
+bitstring bsp3.  All bitstrings must have already been initialized, must
+be the same size, and
+they can all be physically the same bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsputbs	Assigns bitstring bsp1 to the corresponding bitarray bsvec1, which
+contains numints integer words.  No error checking is done to see if
+the bitarray is too large.  Companion routine with
+.bd
+bsgetbs.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsputword	Assigns a given bitword in the specified bitstring to the integer passed.
+Used in conjunction with
+.bd
+BS_BITNUM_DECOMP.
+Companion routine with
+.bd
+bsgetword.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsresetbit	Resets a specified bit of a given bitword.  Used in conjunction with
+.bd
+BS_BITNUM_DECOMP.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bssetbit	Sets a specified bit of a given bitword.  Used in conjunction with
+.bd
+BS_BITNUM_DECOMP.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsstats	Writes bitstring usage statistics to error output.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bstestbit	Returns true if a specified bit of a given bitword is set, false otherwise.
+Used in conjunction with
+.bd
+BS_BITNUM_DECOMP.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bsxor	Produces the bit-wise "exclusive or" of bitstrings bsp1 and bsp2 in
+bitstring bsp3.  All three bitstrings must have previously been initialized,
+must be the same size,
+and can be the same physical bitstring.
+.in -13
+.ne 3
+.sp
+.in +13
+.ta 13
+.ti -13
+bszero	Resets all the bits in a given bitstring.
+.in -13
+.ne 3
+.sp
+BS_BITNUM_DECOMP is a macro which takes as an argument an integer representing
+a bit position in a bitarray.  It assigns to its second argument the word
+number (starting at zero)
+in which that bit position would be found in the bitarray, and it
+assigns to its third argument the bit number corresponding to where the
+bit position would be found in the bit word.  For example, if
+.sp
+.nf
+.in +4
+BS_BITNUM_DECOMP( 37, bitword, bit )
+.sp
+.fi
+.in -4
+assigned bitword = 2 and bit = 5, then the 37th bit position of any
+bitarray would be the 5th bit of the bitword #2 (remember that bitwords
+are numbered starting at zero).
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+quelb(2)
+.sp
+.ne 2
+.fi
+.ti -5
+DIAGNOSTICS
+.br
+.bd
+"error in memget", "error in memput", etc.
+usually means that a routine was passed a bitstring pointer which was
+not initialized.
+.ne 3
+.sp
+.bd
+"loops nested too deeply"
+usually means that you forgot to call
+.bd
+bsendloop
+at the termination of a bitstring search.
+.ne 3
+.sp
+.bd
+"bit number out of range"
+means that an attempt was made to reference a bit position in a bitstring
+which was beyond the upper limit established when the bitstring was initialized
+by
+.bd
+bsinit.
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Vern Paxson
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+Bitstrings may have at most 5000 elements.
+.ne 3
+.sp
+Most operations (e.g. bit-wise "and") are available only for bitstrings,
+and not bitarrays.
+.ne 3
+.sp
+Little or no error-checking is done in the low-level routines.
+.ne 3
+.sp
+The library relies on intrinsic Fortran functions "iand", "not",
+"ishft", "ior", and "ieor", and thus is quite non-portable.
+
+#-t-  bslb.doc                  11244  ascii   05Jan84  08:05:50
+#-h-  bslb.inc                   4874  ascii   05Jan84  08:05:55
+#-h-  memsym                     1879  ascii   05Jan84  08:05:24
+## memsym - symbols definitions for memory allocation
+#nolist
+
+# revision history
+#
+# 01e 08Nov83 mam .Removed the data types(word,pointer).
+# 01d 12jul83 jc  .Ratfixed
+# 01c 09aug82 th  .Changed INSUFFICIENTMEMORY to 0 on the vax
+#                  (this is what an uninitialized variable is likely to have
+#                  in it)
+#                 .Added definitions for PDP_10
+# 01b 05Nov81 cal .Added revision history and turned off listing
+
+# portability note:
+#   dmlb.t assumes that the minimum unit is a character,
+#   and that all the 'MEMWORD', ...., definitions are in terms of
+#   characters
+
+ifdef (VAX)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,4)
+    define(MEMINTEGER,4)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,4)
+    define(MEMREAL,4)
+    define(MEMDOUBLEPRECISION,8)
+    define(MEMCOMPLEX,8)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+ifdef (MODCOMP)
+  
+  
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,1)
+    define(MEMREAL,2)
+    define(MEMDOUBLEPRECISION,4)
+    define(MEMCOMPLEX,4)
+  
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,-1)
+
+enddef
+ifdef (PDP_10)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+
+    # MEMCHARACTER could probably be -7 except for rat4sym, which
+    # tries to store things larger than seven bits in a character.
+    define(MEMCHARACTER,1)
+
+    define(MEMLOGICAL,1)
+    define(MEMREAL,1)
+    define(MEMDOUBLEPRECISION,2)
+    define(MEMCOMPLEX,2)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+
+#list
+#-t-  memsym                     1879  ascii   05Jan84  08:05:24
+#-h-  bsdef                      1107  ascii   05Jan84  08:05:25
+# bsdef - defines for bslb
+#nolist
+
+define(BS_NUMBITS_OFFSET,1)
+define(BS_NUMINTS_OFFSET,2)	# number of integer words in bit string
+define(BS_BITS_OFFSET,3)
+define(BS_EXTRASIZE,2)
+
+define(BS_MAX_LOOP_NESTING,10)
+
+ifdef(VAX)
+	define(BITS_IN_INTEGER,32)
+	define(BS_NIL,0)  # not a possible value returned from memalloc
+enddef
+
+ifdef(MODCOMP)
+	define(BITS_IN_INTEGER,16)
+	define(BS_NIL,-1)
+enddef
+
+ifdef(PDP10)
+	define(BITS_IN_INTEGER,36)
+	define(BS_NIL,0)
+enddef
+
+# maximum number of integer words in bit string; enough for 5000 bits
+define(MAX_BS_SIZE,arith(arith(5000,/,BITS_IN_INTEGER),+,1))
+
+# must include "bscom" and call bslbinit to use the following macro
+define(BS_WORD_FROM_BITPOS,bwmap(($1)+1)) # generates a bitword with bit $1 set
+
+# must include "bscom" to use the following macro
+# if the passed argument corresponds to the cache, invalidate the cache
+define(BS_STOP_CACHE,{
+	if ( curlvl != 0 )
+	    if ( bsptr(curlvl) == $1 )
+	        cacheinvalid = .true.
+	})
+
+define(BS_BITNUM_DECOMP,{
+	$2 = ($1) / BITS_IN_INTEGER
+	$3 = mod($1,BITS_IN_INTEGER)
+	})	# returns bitword and bit positions
+#list
+#-t-  bsdef                      1107  ascii   05Jan84  08:05:25
+#-h-  bscom                      1498  ascii   05Jan84  08:05:26
+# bscom - common data for bslb
+#nolist
+
+# many of the following variables are used for looping through bitstrings.
+# The structures are somewhat non-trivial because nested bitstring loops
+# are allowed.  Each array is indexed by a value given to the user by a
+# call to bsloopinit( bsp ).
+
+integer loopnumbits(BS_MAX_LOOP_NESTING)	# number of bits in bitstring
+integer loopnints(BS_MAX_LOOP_NESTING)	# number of integer words in bitstring
+integer bsptr(BS_MAX_LOOP_NESTING)	# pointer to bitstring
+integer bitindx(BS_MAX_LOOP_NESTING)	# last bit position examined in
+					# bitstring
+integer posindx(BS_MAX_LOOP_NESTING)	# last bit position examined in bitword
+integer wordindx(BS_MAX_LOOP_NESTING)	# last bitword examined
+
+integer looplvl		# the highest loop index yet allocated; kept around
+			# only for error checking
+
+integer curlvl		# the current loop index (i.e. the loop index whose
+			# bitstring currently resides in bs1)
+
+logical cacheinvalid	# if true, bs1 is invalid
+
+integer bs1(MAX_BS_SIZE)	# cache for bitstring currently being loop
+				# through
+
+integer bwmap(BITS_IN_INTEGER)	# indexed by bit position; converts a bit
+				# position to a bitword (e.g. bwmap(4) = 8,
+				# bwmap(5) = 16)
+
+integer ialloc	# number of integer words allocated for bitstring storage
+integer bsalloc	# number of bitstrings allocated
+
+common /bscom/ loopnumbits, loopnints, bsptr, bitindx,
+               posindx, wordindx, looplvl, curlvl, cacheinvalid, bs1,
+               bwmap, ialloc, bsalloc
+#list
+#-t-  bscom                      1498  ascii   05Jan84  08:05:26
+#-t-  bslb.inc                   4874  ascii   05Jan84  08:05:55
+#-h-  bslb                      19458  ascii   05Jan84  08:05:58
+###############################################################################
+#
+#                                  B S L B
+#
+#                           A bit-string package.
+#
+###############################################################################
+#
+# version date initials remarks
+# ------- ---- -------- -------------------------------------------------------
+#
+#   01a  03sep82  vp    written
+#
+
+ifdef(VAX)
+    define(NOIMPLICIT,implicit none)
+enddef
+
+ifnotdef(VAX)
+    define(NOIMPLICIT,)
+enddef
+
+include memsym
+include "bsdef"
+
+
+### bsand - "and" two bit strings into a third bit string
+#
+#  SYNOPSIS
+#    integer bsp1, bsp2, bsp3
+#    call bsand( bsp1, bsp2, bsp3 )
+#
+#  NOTE
+#    This routine assumes that bsp3 IS initialized.
+#    bsp1, bsp2, and bsp3 can all be the same bitstring
+#
+subroutine bsand( bsp1, bsp2, bsp3 )
+NOIMPLICIT
+integer bsp1, bsp2, bsp3
+
+    integer num1bits, num2bits, num3bits, bsnumbits, numints
+    integer bsvec1(MAX_BS_SIZE), bsvec2(MAX_BS_SIZE)
+    integer i
+
+    num1bits = bsnumbits( bsp1 )
+    num2bits = bsnumbits( bsp2 )
+    num3bits = bsnumbits( bsp3 )
+
+    if ( num1bits != num2bits )
+	call error( "bsand: the two source bit strings are not _
+		     the same length" )
+
+    if ( num1bits != num3bits )
+	call error( "bsand: destination string is not the same _
+		     length as the sources" )
+
+    call bsgetbs( bsp1, bsvec1, numints )
+    call bsgetbs( bsp2, bsvec2, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	call bsputword( bsp3, i-1, iand(bsvec1(i), bsvec2(i)) )
+    return
+end
+
+
+### bsareq - returns true if two bitstring arrays are identical
+#
+#  SYNOPSIS
+#    integer bsvec1, bsvec2, numints
+#    logical bitstringsareequal, bsareq
+#    bitstringsareequal = bsareq( bsvec1, bsvec2, numints )
+#
+#  DESCRIPTION
+#    the bitstrings are compared on a bitword by bitword basis
+#
+logical function bsareq( bsvec1, bsvec2, numints )
+NOIMPLICIT
+integer bsvec1(ARB), bsvec2(ARB), numints
+
+    integer i
+
+    bsareq = .false.
+
+    for ( i=1; i <= numints; i=i+1 )
+	if ( bsvec1(i) != bsvec2(i) )
+	    return
+
+    bsareq = .true.
+    return
+end
+
+
+### bsbclr - clear a bit in a bit string
+#
+#  SYNOPSIS
+#    integer bsp, bitnum
+#    call bsbclr( bsp, bitnum )
+#
+subroutine bsbclr( bsp, bitnum )
+NOIMPLICIT
+integer bsp, bitnum, bwnum, bit, bitword
+
+    integer bsnumbits
+
+    if ( bitnum < 0 | bitnum > bsnumbits( bsp ) )
+	call error( "bsbclr: bit number out of range" )
+
+    BS_BITNUM_DECOMP( bitnum, bwnum, bit )
+
+    call bsgetword( bsp, bwnum, bitword )
+    call bsresetbit( bitword, bit )
+    call bsputword( bsp, bwnum, bitword )
+
+    return
+end
+
+
+### bsbset - set a bit in a bit string
+#
+#  SYNOPSIS
+#    integer bsp, bitnum
+#    call bsbset( bsp, bitnum )
+#
+subroutine bsbset( bsp, bitnum )
+NOIMPLICIT
+integer bsp, bitnum, bwnum, bit, bitword
+
+    integer bsnumbits
+
+    if ( bitnum < 0 | bitnum > bsnumbits( bsp ) )
+	call error( "bsbset: bit number out of range" )
+
+    BS_BITNUM_DECOMP( bitnum, bwnum, bit )
+
+    call bsgetword( bsp, bwnum, bitword )
+    call bssetbit( bitword, bit )
+    call bsputword( bsp, bwnum, bitword )
+
+    return
+end
+
+
+### bsbtnc - test 'n clear a bit in a bitstring
+#
+#  SYNOPSIS
+#    integer bsp, bitnum
+#    logical bsbtnc
+#    bitwasset = bsbtnc( bsp, bitnum )
+#
+logical function bsbtnc( bsp, bitnum )
+NOIMPLICIT
+integer bsp, bitnum, bwnum, bit, bitword
+
+    integer bsnumbits
+    logical bstestbit
+
+    if ( bitnum < 0 | bitnum > bsnumbits( bsp ) )
+	call error( "bsbtnc: bit number out of range" )
+
+    BS_BITNUM_DECOMP( bitnum, bwnum, bit )
+
+    call bsgetword( bsp, bwnum, bitword )
+    bsbtnc = bstestbit( bitword, bit )
+    call bsresetbit( bitword, bit )
+    call bsputword( bsp, bwnum, bitword )
+
+    return
+end
+
+
+### bsbtst - test a bit in a bit string
+#
+#  SYNOPSIS
+#    logical bit, bsbtst
+#    integer bsp, bitnum
+#    bit = bsbtst( bsp, bitnum )
+#
+logical function bsbtst( bsp, bitnum )
+NOIMPLICIT
+integer bsp, bitnum, bwnum, bit, bitword
+
+    integer bsnumbits
+    logical bstestbit
+
+    if ( bitnum < 0 | bitnum > bsnumbits( bsp ) )
+	call error( "bsbtst: bit number out of range" )
+
+    BS_BITNUM_DECOMP( bitnum, bwnum, bit )
+
+    call bsgetword( bsp, bwnum, bitword )
+    return ( bstestbit( bitword, bit ) )
+end
+
+
+### bscomp - complement all the bits in a bit string
+#
+#  SYNOPSIS
+#    integer bsp
+#    call bscomp( bsp )
+#
+subroutine bscomp( bsp )
+NOIMPLICIT
+integer bsp
+
+    integer numints, i, bsvec(MAX_BS_SIZE)
+
+    call bsgetbs( bsp, bsvec, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	bsvec(i) = not(bsvec(i))
+
+    call bsputbs( bsp, bsvec, numints )
+    return
+end
+
+
+### bscopy - copy a bit string to an existing bit string
+#
+#  SYNOPSIS
+#    integer bspsrc, bspdest
+#    call bscopy( bspsrc, bspdest )
+#
+#  DESCRIPTION
+#    This routine assumes that bspdest IS initialized.
+#
+subroutine bscopy( bspsrc, bspdest )
+NOIMPLICIT
+integer bspsrc, bspdest
+
+    integer numints, numbits, bsnumbits
+    integer bsvec(MAX_BS_SIZE)
+
+    numbits = bsnumbits( bspsrc )
+
+    if ( numbits != bsnumbits( bspdest ) )
+	call error( "bscopy: bit strings are not the same size" )
+
+    call bsgetbs( bspsrc, bsvec, numints )
+    call bsputbs( bspdest, bsvec, numints )
+
+    return
+end
+
+
+### bsdestroy - deallocate the storage for a bit string
+#
+#  SYNOPSIS
+#    integer bsp
+#    call bsdestroy( bsp )
+#
+subroutine bsdestroy( bsp )
+NOIMPLICIT
+integer bsp
+
+    integer memfree
+
+    if ( memfree( bsp ) != OK )
+        call error( "bsdestroy: error in memfree" )
+    bsp = BS_NIL
+
+    return
+end
+
+
+### bsempty - returns true if bitstring has no set elements
+#
+#  SYNOPSIS
+#    integer bsp
+#    logical bitstringisempty, bsempty
+#    bitstringisempty = bsempty( bsp )
+#
+#  DESCRIPTION
+#    the bitstring is check for any non-zero bitwords
+#
+logical function bsempty( bsp )
+NOIMPLICIT
+integer bsp, numints
+integer bsvec(MAX_BS_SIZE)
+
+    integer i
+
+    bsempty = .false.
+
+    call bsgetbs( bsp, bsvec, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	if ( bsvec(i) != 0 )
+	    return
+
+    bsempty = .true.
+    return
+end
+
+
+### bsendloop - terminate a sorted search through bitstring
+#
+#  SYNOPSIS
+#    integer bsindx
+#    call bsendloop( bsindx )
+#
+#  DESCRIPTION
+#    reclaims the stack space needed for a sorted search through a
+#    bitstring
+#
+subroutine bsendloop( bsindx )
+NOIMPLICIT
+integer bsindx
+include "bscom"
+
+    if ( bsindx == looplvl )
+	looplvl = looplvl - 1
+
+    if ( looplvl < 0 )
+	call error( "bsendloop: no loops are active" )
+
+    if ( bsindx == curlvl )
+	curlvl = 0	# invalidate curlvl
+
+    bsptr(bsindx) = BS_NIL	# invalidate the bitstring pointer slot
+
+    return
+end
+
+
+### bsequal - returns true if two bitstrings are identical
+#
+#  SYNOPSIS
+#    integer bsp1, bsp2
+#    logical bitstringsareequal, bsequal
+#    bitstringsareequal = bsequal( bsp1, bsp2 )
+#
+#  DESCRIPTION
+#    the bitstrings are compared on a bitword by bitword basis
+#
+logical function bsequal( bsp1, bsp2 )
+NOIMPLICIT
+integer bsp1, bsp2, num1bits, num2bits, bsnumbits, numints
+integer bsvec1(MAX_BS_SIZE), bsvec2(MAX_BS_SIZE)
+logical bsareq
+
+    integer i
+
+    num1bits = bsnumbits( bsp1 )
+    num2bits = bsnumbits( bsp2 )
+
+    if ( num1bits != num2bits )
+	return
+
+    call bsgetbs( bsp1, bsvec1, numints )
+    call bsgetbs( bsp2, bsvec2, numints )
+
+    bsequal = bsareq( bsvec1, bsvec2, numints )
+    return
+end
+
+
+### bsgetbs - return a bitstring in a passed array
+#
+#  SYNOPSIS
+#    integer bsp, bsvec(size of bitstring in integer words), numints
+#    call bsgetbs( bsp, bsvec, numints )
+#
+#  DESCRIPTION
+#    Returns the bitstring indexed by bsp, and the number of integers
+#  allocated for the bitstring in numints
+#
+subroutine bsgetbs( bsp, bsvec, numints )
+NOIMPLICIT
+integer bsp, bsvec(ARB), numints
+
+    integer memget, bsnumints
+
+    numints = bsnumints(bsp)
+
+    if ( memget( bsp, bsvec, numints, BS_BITS_OFFSET ) != OK )
+	call error( "bsgetbs: error in memget" )
+
+    return
+end
+
+
+### bsgetword - return a bitword from a bitstring
+#
+#  SYNOPSIS
+#    integer bsp, bwnum, bitword
+#    call bsgetword( bsp, bwnum, bitword )
+#
+#  DESCRIPTION
+#    gets the bwnum'th bitword from the bitstring indexed by bsp
+#
+subroutine bsgetword( bsp, bwnum, bitword )
+NOIMPLICIT
+integer bsp, bwnum, bitword
+
+    integer memeget
+
+    if ( memeget( bsp, bitword, BS_BITS_OFFSET + bwnum ) != OK )
+	call error( "bsgetword: error in memeget" )
+
+    return
+end
+
+
+### bsinit - initialize a bit string with a specified number of bits
+#
+#  SYNOPSIS
+#    integer bsp, numbits
+#    call bsinit( bsp, numbits )
+#
+#  NOTE
+#    actually, bits number 0 - numbit are allocated
+#
+subroutine bsinit( bsp, numbits )
+NOIMPLICIT
+integer bsp, numbits, numints
+include "bscom"
+
+    integer memalloc, memeput
+
+    numints = numbits / BITS_IN_INTEGER + 1
+
+    if ( numints > MAX_BS_SIZE )
+	call error( "bsinit: bit string too large" )
+
+    if ( memalloc( bsp, BS_EXTRASIZE+numints, MEMINTEGER ) != OK )
+	call error( "bsinit: insufficient memory" )
+    else
+	{
+	ialloc = ialloc + numints
+	bsalloc = bsalloc + 1
+
+	if ( memeput( bsp, numbits, BS_NUMBITS_OFFSET ) != OK )
+	    call error( "bsinit: error in memeput" )
+	if ( memeput( bsp, numints, BS_NUMINTS_OFFSET ) != OK )
+	    call error( "bsinit: error in memeput" )
+	call bszero( bsp )
+	}
+
+    return
+end
+
+
+### bslbinit - initialize bit string library
+#
+#  SYNOPSIS
+#    call bslbinit
+#
+subroutine bslbinit
+NOIMPLICIT
+integer i, j
+include "bscom"
+
+    for ( i=1; i <= BS_MAX_LOOP_NESTING; i=i+1 )
+	bsptr(i) = BS_NIL
+
+    j = 1
+
+    for ( i=1; i <= BITS_IN_INTEGER; i=i+1 )
+	{
+	bwmap(i) = j
+	j = ishft(j,1)
+	}
+
+    ialloc = 0
+    bsalloc = 0
+
+    looplvl = 0
+    curlvl = 0
+    cacheinvalid = .true.
+    return
+end
+
+
+### bsloopinit - prepare for sorted loop through bit string
+#
+#  SYNOPSIS
+#    integer bsp, bsindx, bsloopinit
+#    bsindx = bsloopinit( bsp )
+#
+#  DESCRIPTION
+#    Returns an index which can be later passed to calls to bsnext
+#  in order to retrieve bit strings elements one at a time in sorted
+#  order.
+#
+#  NOTE
+#    Bitstring loops can be nested BS_MAX_LOOP_NESTING levels
+#
+integer function bsloopinit( bsp )
+NOIMPLICIT
+integer bsp, bsnumbits, numints, bsnumints, bsindx
+include "bscom"
+
+    for ( bsindx=1; bsptr(bsindx) != BS_NIL & bsindx <= looplvl;
+	  bsindx=bsindx+1 )
+	;
+
+    if ( bsindx > looplvl )
+	{
+	looplvl = looplvl + 1
+
+	if ( looplvl > BS_MAX_LOOP_NESTING )
+	    call error( "bsloopinit: loops nested too deeply" )
+
+	bsindx = looplvl
+	}
+
+    loopnumbits(bsindx) = bsnumbits( bsp )
+    loopnints(bsindx) = bsnumints( bsp )
+
+    bsptr(bsindx) = bsp
+
+    call bslppos( bsindx, 0 )	# so when bsnext increments the bit index the
+				# first time, it will correspond to bit
+				# zero of the bitstring
+
+    return ( bsindx )
+
+end
+
+
+### bslppos - set bit position for next bsnext to start at
+#
+#  SYNOPSIS
+#    integer bsindx, bitpos
+#    call bslppos( bsindx, bitpos )
+#
+#  DESCRIPTION
+#    modifies the common data kept for the bitstring indexed by bsindx
+#  so that the next call to bsnext will begin with the `bitpos'th bit
+#  rather than the bit after the bit returned by the last call to bsnext.
+#
+subroutine bslppos( bsindx, bitpos )
+NOIMPLICIT
+integer bsindx, bitpos
+include "bscom"
+
+    bitindx(bsindx) = bitpos
+    BS_BITNUM_DECOMP( bitpos, wordindx(bsindx), posindx(bsindx) )
+
+    BS_STOP_CACHE( bsptr(bsindx) )	# need to stop the cache because
+				# repositioning might back up over elements
+				# in the cache which have been zeroed
+    return
+end
+
+
+### bsmkcopy - make a copy of a bit string
+#
+#  SYNOPSIS
+#    integer oldbsp, newbsp
+#    call bsmkcopy( oldbsp, newbsp )
+#
+#  DESCRIPTION
+#    This routine assumes that newbsp is NOT initialized.
+#
+subroutine bsmkcopy( oldbsp, newbsp )
+NOIMPLICIT
+integer oldbsp, newbsp
+
+    integer numints, numbits, bsnumbits
+    integer bsvec(MAX_BS_SIZE)
+
+    numbits = bsnumbits( oldbsp )
+    call bsgetbs( oldbsp, bsvec, numints )
+
+    call bsinit( newbsp, numbits )
+
+    call bsputbs( newbsp, bsvec, numints )
+
+    return
+end
+
+
+### bsnext - get next element in sorted search through bitstring
+#
+#  SYNOPSIS
+#    integer bsindx, val
+#    logical bsnext, anotherelement
+#    anotherelement = bsnext( bsindx, val )
+#
+#  DESCRIPTION
+#    The bitstring to be searched is stored in a common array.  bsnext
+#    scans through the array starting at bitindx(bsindx) and returns the
+#    bit number of the next set bit it encounters.  Subsequent calls
+#    return increasing bit numbers.
+#
+logical function bsnext( bsindx, val )
+NOIMPLICIT
+integer bsindx, val, bitword, bitpos, bitnum, wordnum, numbits
+logical bstestbit
+include "bscom"
+
+    integer memget
+
+    bsnext = .false.
+
+    if ( curlvl != bsindx  |  cacheinvalid )
+	{ # cache the bitstring
+	if ( memget( bsptr(bsindx), bs1, loopnints(bsindx),
+	              BS_BITS_OFFSET ) != OK )
+	    call error( "bsnext: error in memget" )
+	curlvl = bsindx
+	cacheinvalid = .false.
+	}
+
+    # get array elements in local variables to cut down on time
+    # spent indexing
+
+    numbits = loopnumbits(curlvl)	# number of bits in bitstring
+    wordnum = wordindx(curlvl)	# number of bitword we are looking at
+    bitnum = bitindx(curlvl)	# number of bit in bitstring
+    bitpos = posindx(curlvl)	# number of bit in bitword
+
+    for ( ; bitnum <= numbits; wordnum=wordnum+1 )
+	{
+	bitword = bs1(wordnum+1)
+
+	if ( bitword != 0 )
+	    {
+	    for ( ; bitpos < BITS_IN_INTEGER; bitpos=bitpos+1 )
+		{
+		if ( bstestbit( bitword, bitpos ) )
+		    { # found a set bit
+		    val = bitnum
+		    bsnext = .true.
+
+		    # clear it out of the local copy
+		    call bsresetbit( bs1(wordnum+1), bitpos )
+
+		    break 2
+		    }
+		bitnum = bitnum + 1
+		}
+	    }
+
+	else
+	    bitnum = bitnum + BITS_IN_INTEGER - bitpos
+
+	bitpos = 0
+	}
+
+    wordindx(curlvl) = wordnum
+    posindx(curlvl) = bitpos + 1  # we don't need to check for boundary
+				  # conditions because the loop's structure
+				  # takes care of them
+    bitindx(curlvl) = bitnum + 1
+
+    return
+end
+
+
+### bsnumbits - return the number of bits allocated in a bitstring
+#
+#  SYNOPSIS
+#    integer numbits, bsnumbits, bsp
+#    numbits = bsnumbits( bsp )
+#
+integer function bsnumbits( bsp )
+NOIMPLICIT
+integer bsp
+
+    integer numbits, memeget
+
+    if ( memeget( bsp, numbits, BS_NUMBITS_OFFSET ) != OK )
+        call error( "bsnumbits: error in memeget" )
+    bsnumbits = numbits
+
+    return
+end
+
+
+### bsnumints - return the number of integer words allocated for a bitstring
+#
+#  SYNOPSIS
+#    integer numints, bsnumints, bsp
+#    numints = bsnumints( bsp )
+#
+integer function bsnumints( bsp )
+NOIMPLICIT
+integer bsp
+
+    integer numints, memeget
+
+    if ( memeget( bsp, numints, BS_NUMINTS_OFFSET ) != OK )
+        call error( "bsnumints: error in memeget" )
+    bsnumints = numints
+
+    return
+end
+
+
+### bsor - "or" two bit strings into a third bit string
+#
+#  SYNOPSIS
+#    integer bsp1, bsp2, bsp3
+#    call bsor( bsp1, bsp2, bsp3 )
+#
+#  NOTE
+#    This routine assumes that bsp3 IS initialized.
+#    bsp1, bsp2, and bsp3 can all be the same bitstring
+#
+subroutine bsor( bsp1, bsp2, bsp3 )
+NOIMPLICIT
+integer bsp1, bsp2, bsp3
+
+    integer num1bits, num2bits, num3bits, bsnumbits, numints
+    integer bsvec1(MAX_BS_SIZE), bsvec2(MAX_BS_SIZE)
+    integer i
+
+    num1bits = bsnumbits( bsp1 )
+    num2bits = bsnumbits( bsp2 )
+    num3bits = bsnumbits( bsp3 )
+
+    if ( num1bits != num2bits )
+	call error( "bsor: the two source bit strings _
+		     are not the same length" )
+
+    if ( num1bits != num3bits )
+	call error( "bsor: destination string is not the _
+		     same length as the sources" )
+
+    call bsgetbs( bsp1, bsvec1, numints )
+    call bsgetbs( bsp2, bsvec2, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	call bsputword( bsp3, i-1, ior(bsvec1(i), bsvec2(i)) )
+    return
+end
+
+
+### bsputbs - modify a bitstring to passed array
+#
+#  SYNOPSIS
+#    integer bsp, bsvec(size of bitstring in integer words), numints
+#    call bsputbs( bsp, bsvec, numints )
+#
+#  DESCRIPTION
+#    copies numints words from bsvec into the bitstring indexed by bsp
+#
+subroutine bsputbs( bsp, bsvec, numints )
+NOIMPLICIT
+integer bsp, bsvec(ARB), numints
+include "bscom"
+
+    integer memput
+
+    if ( memput( bsp, bsvec, numints, BS_BITS_OFFSET ) != OK )
+	call error( "bsputbs: error in memput" )
+
+    BS_STOP_CACHE( bsp )
+    return
+end
+
+
+### bsputword - set a bitword in a bitstring
+#
+#  SYNOPSIS
+#    integer bsp, bwnum, bitword
+#    call bsputword( bsp, bwnum, bitword )
+#
+#  DESCRIPTION
+#    sets the bwnum'th bitword in the bitstring indexed by bsp to bitword
+#
+subroutine bsputword( bsp, bwnum, bitword )
+NOIMPLICIT
+integer bsp, bwnum, bitword
+include "bscom"
+
+    integer memeput
+
+    if ( memeput( bsp, bitword, BS_BITS_OFFSET + bwnum ) != OK )
+	call error( "bsputword: error in memeput" )
+
+    BS_STOP_CACHE( bsp )
+    return
+end
+
+
+### bsresetbit - reset a given bit of a given bitword
+#
+#  SYNOPSIS
+#    integer bitword, bit
+#    call bsresetbit( bitword, bit )
+#
+subroutine bsresetbit( bitword, bit )
+NOIMPLICIT
+integer bitword, bit, tbit
+include "bscom"
+
+    tbit = BS_WORD_FROM_BITPOS( bit )
+
+    bitword = iand(bitword, not(tbit))
+    return
+end
+
+
+### bssetbit - set a given bit of a given bitword
+#
+#  SYNOPSIS
+#    integer bitword, bit
+#    call bssetbit( bitword, bit )
+#
+subroutine bssetbit( bitword, bit )
+NOIMPLICIT
+integer bitword, bit, tbit
+include "bscom"
+
+    tbit = BS_WORD_FROM_BITPOS( bit )
+
+    bitword = ior(bitword, tbit)
+    return
+end
+
+
+### bsstats - dumps bitstring usage statistics
+#
+#  SYNOPSIS
+#    call bsstats
+#
+subroutine bsstats
+NOIMPLICIT
+include "bscom"
+
+    call remark( "Bitstring usage statistics:" )
+    call fprintf( ERROUT, "  bit strings allocated: %d@n", bsalloc )
+    call fprintf( ERROUT, "  integer words allocated for string storage: %d@n",
+		  ialloc )
+    return
+end
+
+
+### bstestbit - returns .true. if a given bit is set in a given bitword, 
+#               .false. if not
+#
+#  SYNOPSIS
+#    integer bitword, bit
+#    logical bitisset, testbit
+#    bitisset = testbit( bitword, bit )
+#
+logical function bstestbit( bitword, bit )
+NOIMPLICIT
+integer bitword, bit, tbit
+include "bscom"
+
+    tbit = BS_WORD_FROM_BITPOS( bit )
+
+    if( iand(bitword, tbit) == tbit )
+	return ( .true. )
+    else
+	return ( .false. )
+end
+
+
+### bsxor - "xor" two bit strings into a third bit string
+#
+#  SYNOPSIS
+#    integer bsp1, bsp2, bsp3
+#    call bsxor( bsp1, bsp2, bsp3 )
+#
+#  NOTE
+#    This routine assumes that bsp3 IS initialized.
+#    bsp1, bsp2, and bsp3 can all be the same bitstring
+#
+subroutine bsxor( bsp1, bsp2, bsp3 )
+NOIMPLICIT
+integer bsp1, bsp2, bsp3
+
+    integer num1bits, num2bits, num3bits, bsnumbits, numints
+    integer bsvec1(MAX_BS_SIZE), bsvec2(MAX_BS_SIZE)
+    integer i
+
+    num1bits = bsnumbits( bsp1 )
+    num2bits = bsnumbits( bsp2 )
+    num3bits = bsnumbits( bsp3 )
+
+    if ( num1bits != num2bits )
+	call error( "bsxor: the two source bit strings _
+		     are not the same length" )
+
+    if ( num1bits != num3bits )
+	call error( "bsxor: destination string is not the _
+		     same length as the sources" )
+
+    call bsgetbs( bsp1, bsvec1, numints )
+    call bsgetbs( bsp2, bsvec2, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	call bsputword( bsp3, i-1, ieor(bsvec1(i), bsvec2(i)) )
+    return
+end
+
+
+### bszero - zero all the bits in a bit string
+#
+#  SYNOPSIS
+#    integer bsp
+#    call bszero( bsp )
+#
+subroutine bszero( bsp )
+NOIMPLICIT
+integer bsp
+
+    integer numints, i, bsvec(MAX_BS_SIZE)
+
+    call bsgetbs( bsp, bsvec, numints )
+
+    for ( i=1; i <= numints; i=i+1 )
+	bsvec(i) = 0
+
+    call bsputbs( bsp, bsvec, numints )
+    return
+end
+#-t-  bslb                      19458  ascii   05Jan84  08:05:58
+#-t-  bslb.all                  35966  ascii   05Jan84  08:10:35
+#-h-  quelb.all                 26027  ascii   05Jan84  08:10:39
+#-h-  quelb.doc                  7155  ascii   05Jan84  08:07:56
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^quelb(2)^%^quelb(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+quelb - integer queue and stack library
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+    integer qp, int, qlp, sp
+    logical isempty, queempty, another, quenext, stkempty
+    integer quefremove, quebremove, quefront, queback, queloopinit
+    integer stkpop, stktop
+
+    call queinit ( qp )
+    call queclear ( qp )
+    call quedestroy ( qp )
+    isempty = queempty ( qp )
+    call quefinsert ( qp, int )
+    call quebinsert ( qp, int )
+    int = quefremove ( qp )
+    int = quebremove ( qp )
+    int = quefront ( qp )
+    int = queback ( qp )
+    qlp = queloopinit ( qp )
+    another = quenext ( qlp, int )
+
+    call stkinit ( sp )
+    call stkclear ( sp )
+    call stkdestroy ( sp )
+    isempty = stkempty ( sp )
+    call stkpush ( sp, int )
+    int = stkpop ( sp )
+    int = stktop ( sp )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+.ne 3
+.sp
+These routines implement a simple double-ended queue package.
+A double-ended queue is a sequence of items.
+Only the items on the two ends can be examined or modified.
+.ne 3
+.sp
+In this package, the items stored are integers.
+If you want to store other types of items in a queue, you can store
+pointers to them, since pointers are integers.
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+queinit	initialize a queue.
+This routine creates a new, empty queue, and gives you a pointer to it.
+The pointer is used by all of the other queue routines.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+queclear	clear a queue.
+This routine removes all of the integers from a queue and throws them away.
+The queue still exists, but it is empty.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quedestroy	deallocate the storage for a queue.
+This routine not only removes all of the integers from a queue, it also
+destroys the queue itself and sets the pointer you passed it to NIL.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+queempty	tell whether a queue is empty or not.
+If the queue has any integers in it, queempty returns .false.;
+if there are no integers, it returns .true..
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quefinsert	insert an integer onto the front of a queue.
+You pass this routine a queue pointer and an integer, and it places
+the integer on the front end of the queue.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quebinsert	insert an integer onto the back of a queue.
+You pass this routine a queue pointer and an integer, and it places
+the integer on the back end of the queue.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quefremove	remove an integer from the front of a queue.
+This routine gets the integer on the front end of a queue, removes it,
+and returns it to the caller.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quebremove	remove an integer from the back of a queue.
+This routine gets the integer on the back end of a queue, removes it,
+and returns it to the caller.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quefront	examine the integer on the front of a queue without disturbing it.
+This routine gets the integer on the front end of a queue and returns
+it to the caller.
+The integer is NOT removed.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+queback	examine the integer on the back of a queue without disturbing it.
+This routine gets the integer on the back end of a queue and returns
+it to the caller.
+The integer is NOT removed.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+queloopinit	prepare for a loop through the elements of a queue.
+This routine is used to initialize a for-loop through the
+elements of a queue.
+quenext is used to do the actual looping.
+.in -12
+.ne 3
+.sp
+.in +12
+.ta 12
+.ti -12
+quenext	generate the next element in a queue loop.
+This routine is used to get the next element in a loop through the elements
+of a queue.
+The loop pointer must have been initialized by queloopinit.
+If there is another element, quenext gets it and returns .true.;
+if there are no more elements, quenext returns .false.
+The intended use of queloopinit and quenext is:
+.sp
+.nf
+.in +4
+for(qlp=queloopinit(qp);quenext(qlp,int);)
+    { ... }
+.sp
+.fi
+.in -4
+.in -12
+.ne 3
+.sp
+In addition to the queue routines, there are the following routines
+to manipulate stacks.
+A stack is a restricted queue - only the item on the top
+can be examined or modified.
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkinit	initialize a stack.
+This routine creates a new, empty stack, and gives you a pointer to it.
+The pointer is used by all of the other stack routines.
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkclear	clear a stack.
+This routine removes all of the integers from a stack and throws them away.
+The stack still exists, but it is empty.
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkdestroy	deallocate the storage for a stack.
+This routine not only removes all of the integers from a stack, it also
+destroys the stack itself and sets the pointer you passed it to NIL.
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkempty	tell whether a stack is empty or not.
+If the stack has any integers in it, stkempty returns .false.;
+if there are no integers, it returns .true..
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkpush	push an integer onto a stack.
+You pass this routine a stack pointer and an integer, and it places
+the integer on the top of the stack.
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stkpop	pop an integer off of a stack.
+This routine gets the integer on the top of a stack, removes it,
+and returns it to the caller.
+.in -11
+.ne 3
+.sp
+.in +11
+.ta 11
+.ti -11
+stktop	return the value on top of a stack without popping it.
+This routine gets the integer on the top of a stack and returns
+it to the caller.  The integer is NOT popped.
+.in -11
+.ne 3
+.sp
+Quelb also has an optional statistics-gathering feature.
+It keeps a count of the number of queue headers and nodes allocated
+and freed.
+If you suspect your program is forgetting to free some of its
+queues, and therefore running out of memory, this feature can
+be very useful.
+.ne 3
+.sp
+The statistics-gathering code is conditionally-compiled out
+of the installed quelb.  To use it, copy the source of quelb into
+your space, change the definition of STATISTICS from NO to YES, and
+compile it.
+Then add a call to questats to your program where you want the
+statistics printed.
+They will be written to ERROUT.
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Jef Poskanzer
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+.ne 3
+.sp
+The usage statistics code is slightly non-portable.
+It assumes a local variable is static.
+.sp
+.ne 2
+.fi
+.ti -5
+DIAGNOSTICS
+.br
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+insufficient memory.
+The dynamic memory allocation routine (memalloc) failed.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+non-existant queue.
+The queue pointer that you passed to the routines did not in fact
+point to a queue.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+internal error - inconsistant queue detected.
+This should never happen.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+attempt to remove item from empty queue.
+The queue that you tried to remove an item from was empty.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+attempt to get item from empty queue.
+The queue that you tried to look at an end of was empty.
+
+#-t-  quelb.doc                  7155  ascii   05Jan84  08:07:56
+#-h-  quelb.inc                  2393  ascii   05Jan84  08:07:57
+#-h-  memsym                     1879  ascii   05Jan84  08:07:43
+## memsym - symbols definitions for memory allocation
+#nolist
+
+# revision history
+#
+# 01e 08Nov83 mam .Removed the data types(word,pointer).
+# 01d 12jul83 jc  .Ratfixed
+# 01c 09aug82 th  .Changed INSUFFICIENTMEMORY to 0 on the vax
+#                  (this is what an uninitialized variable is likely to have
+#                  in it)
+#                 .Added definitions for PDP_10
+# 01b 05Nov81 cal .Added revision history and turned off listing
+
+# portability note:
+#   dmlb.t assumes that the minimum unit is a character,
+#   and that all the 'MEMWORD', ...., definitions are in terms of
+#   characters
+
+ifdef (VAX)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,4)
+    define(MEMINTEGER,4)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,4)
+    define(MEMREAL,4)
+    define(MEMDOUBLEPRECISION,8)
+    define(MEMCOMPLEX,8)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+ifdef (MODCOMP)
+  
+  
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+    define(MEMCHARACTER,1)
+    define(MEMLOGICAL,1)
+    define(MEMREAL,2)
+    define(MEMDOUBLEPRECISION,4)
+    define(MEMCOMPLEX,4)
+  
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,-1)
+
+enddef
+ifdef (PDP_10)
+
+
+    # these are defined as the number of 'words' in the given item
+    define(MEMWORD,1)
+    define(MEMPOINTER,1)
+    define(MEMINTEGER,1)
+
+    # MEMCHARACTER could probably be -7 except for rat4sym, which
+    # tries to store things larger than seven bits in a character.
+    define(MEMCHARACTER,1)
+
+    define(MEMLOGICAL,1)
+    define(MEMREAL,1)
+    define(MEMDOUBLEPRECISION,2)
+    define(MEMCOMPLEX,2)
+
+    # returned if there is not enough memory
+    define(INSUFFICIENTMEMORY,0)
+
+enddef
+
+#list
+#-t-  memsym                     1879  ascii   05Jan84  08:07:43
+#-h-  quelb.c                     254  ascii   05Jan84  08:07:44
+   # common block for quelb
+
+    integer head(HEAD_SIZE), node(NODE_SIZE)
+    common /quecom/ head, node
+
+ifdef (STATISTICS)
+    integer cheadalloc, cheadfree, cnodealloc, cnodefree
+    common /quecnt/ cheadalloc, cheadfree, cnodealloc, cnodefree
+enddef
+#-t-  quelb.c                     254  ascii   05Jan84  08:07:44
+#-t-  quelb.inc                  2393  ascii   05Jan84  08:07:57
+#-h-  quelb                     16089  ascii   05Jan84  08:07:58
+###############################################################################
+#
+#                                Q U E L B
+#
+#                   An integer double-ended queue package.
+#
+###############################################################################
+#
+# version date initials remarks
+# ------- ---- -------- -------------------------------------------------------
+#   04B  13Jul83  cal   Restored from the January Vax savtools backup tape.
+#                       Ratfixed.
+#   04A  16jun82  JP    Changed name from dqlb to quelb.
+#                       Included stklb.
+#                       Speeded up by consolidating memegets and memeputs
+#                         into memgets and memputs.
+#                       Added queloopinit and quenext.
+#                       Added optional statistics keeping.
+#
+#   03A  10may82  tab   changed all routines which call the new dynamic memory
+#                       routines to check status and return ERR or call error.
+#
+#   02B  05apr82  JP    Changed name from idqlb to dqlb.
+#
+#   02A  07jan82  JP    Removed status returns.  They turned out to be
+#			  counterproductive.
+#
+#   01A  30sep81  JP    First written.
+#        through
+#        01oct81
+#
+###############################################################################
+
+include "memsym"
+
+#define(STATISTICS,)		# uncomment if you want usage statistics
+
+define(NIL,INSUFFICIENTMEMORY)
+
+define(HEAD_FRONT_POINTER_OFFSET,1)
+define(HEAD_BACK_POINTER_OFFSET,2)
+define(HEAD_SIZE,2)
+
+define(NODE_VALUE_OFFSET,1)
+define(NODE_NEXT_POINTER_OFFSET,2)
+define(NODE_PREV_POINTER_OFFSET,3)
+define(NODE_SIZE,3)
+
+
+###############################################################################
+#
+###  queinit - initialize a queue
+#
+#  SYNOPSIS
+#    integer qp
+#    call queinit ( qp )
+#
+subroutine queinit ( qp )
+integer qp
+
+    integer memalloc, memput
+    include "quelb.c"
+ifdef (STATISTICS)
+    logical firstcall		# Warning - NON-PORTABLE!!!  Assumes static,
+    data firstcall / .true. /	# but locals are not guaranteed to be static.
+
+    if ( firstcall )
+	{
+	firstcall = .false.
+        cheadalloc = 0
+        cheadfree = 0
+        cnodealloc = 0
+        cnodefree = 0
+	}
+enddef
+
+    if ( memalloc ( qp, HEAD_SIZE, MEMINTEGER ) != OK )
+	call error ( "queinit: insufficient memory" )
+ifdef (STATISTICS)
+    cheadalloc = cheadalloc + 1
+enddef
+    head(HEAD_FRONT_POINTER_OFFSET) = NIL
+    head(HEAD_BACK_POINTER_OFFSET) = NIL
+    if ( memput ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ("queinit: couldn't write header" )
+
+    return
+end
+
+
+###############################################################################
+#
+###  queclear - clear a queue
+#
+#  SYNOPSIS
+#    integer qp
+#    call queclear ( qp )
+#
+subroutine queclear ( qp )
+integer qp
+
+    logical queempty
+    integer x, quefremove
+
+    if ( qp == NIL )
+	call error ( "queclear: non-existant queue" )
+    while ( ! queempty ( qp ) )
+	x = quefremove ( qp )
+
+    return
+end
+
+
+###############################################################################
+#
+###  quedestroy - deallocate the storage for a queue
+#
+#  SYNOPSIS
+#    integer qp
+#    call quedestroy ( qp )
+#
+subroutine quedestroy ( qp )
+integer qp
+
+    integer memfree
+    include "quelb.c"
+
+    if ( qp == NIL )
+	call error ( "quedestroy: non-existant queue" )
+    call queclear ( qp )
+    if ( memfree ( qp ) != OK )
+        call error ( "quedestroy: couldn't destroy queue" )
+ifdef (STATISTICS)
+    cheadfree = cheadfree + 1
+enddef
+    qp = NIL
+
+    return
+end
+
+
+###############################################################################
+#
+###  queempty - tell whether a queue is empty or not
+#
+#  SYNOPSIS
+#    logical isempty, queempty
+#    integer qp
+#    isempty = queempty ( qp )
+#
+logical function queempty ( qp )
+integer qp
+
+    integer frontp, memeget
+
+    if ( qp == NIL )
+	call error ( "queempty: non-existant queue" )
+    if ( memeget ( qp, frontp, HEAD_FRONT_POINTER_OFFSET ) != OK )
+        call error( "queempty: couldn't read from header" )
+    if ( frontp == NIL )
+	queempty = .true.
+    else
+	queempty = .false.
+
+    return
+end
+
+
+###############################################################################
+#
+###  quefinsert - insert an integer to the front of a queue
+#
+#  SYNOPSIS
+#    integer qp, int
+#    call quefinsert ( qp, int )
+#
+subroutine quefinsert ( qp, int )
+integer qp, int
+
+    integer newfp, memalloc, oldfp, memget, memput, memeput
+    include "quelb.c"
+
+    if ( qp == NIL )
+	call error ( "quefinsert: non-existant queue" )
+    if ( memget ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quefinsert: couldn't read header")
+    oldfp = head(HEAD_FRONT_POINTER_OFFSET)
+    if ( memalloc ( newfp, NODE_SIZE, MEMINTEGER ) != OK )
+	call error ( "quefinsert: insufficient memory" )
+ifdef (STATISTICS)
+    cnodealloc = cnodealloc + 1
+enddef
+    node(NODE_VALUE_OFFSET) = int
+    node(NODE_PREV_POINTER_OFFSET) = NIL
+    if ( oldfp == NIL )
+	{ #  The queue is currently empty.
+	node(NODE_NEXT_POINTER_OFFSET) = NIL
+	head(HEAD_FRONT_POINTER_OFFSET) = newfp
+	head(HEAD_BACK_POINTER_OFFSET) = newfp
+	}
+    else
+	{ #  The queue has some elements in it already.
+	node(NODE_NEXT_POINTER_OFFSET) = oldfp
+	if ( memeput ( oldfp, newfp, NODE_PREV_POINTER_OFFSET ) != OK )
+            call error ( "quefinsert: couldn't write to old node" )
+	head(HEAD_FRONT_POINTER_OFFSET) = newfp
+	}
+    if ( memput ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quefinsert: couldn't write header" )
+    if ( memput ( newfp, node, NODE_SIZE, 1 ) != OK )
+        call error ( "quefinsert: couldn't write new node" )
+
+    return
+end
+
+
+###############################################################################
+#
+###  quebinsert - insert an integer to the back of a queue
+#
+#  SYNOPSIS
+#    integer qp, int
+#    call quebinsert ( qp, int )
+#
+subroutine quebinsert ( qp, int )
+integer qp, int
+
+    integer newbp, memalloc, oldbp, memget, memput, memeput
+    include "quelb.c"
+
+    if ( qp == NIL )
+	call error ( "quebinsert: non-existant queue" )
+    if ( memget ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quebinsert: couldn't read header")
+    oldbp = head(HEAD_BACK_POINTER_OFFSET)
+    if ( memalloc( newbp, NODE_SIZE, MEMINTEGER ) != OK )
+	call error ( "quebinsert: insufficient memory" )
+ifdef (STATISTICS)
+    cnodealloc = cnodealloc + 1
+enddef
+    node(NODE_VALUE_OFFSET) = int
+    node(NODE_NEXT_POINTER_OFFSET) = NIL
+    if ( oldbp == NIL )
+	{ #  The queue is currently empty.
+	node(NODE_PREV_POINTER_OFFSET) = NIL
+	head(HEAD_FRONT_POINTER_OFFSET) = newbp
+	head(HEAD_BACK_POINTER_OFFSET) = newbp
+	}
+    else
+	{ #  The queue has some elements in it already.
+	node(NODE_PREV_POINTER_OFFSET) = oldbp
+	if ( memeput ( oldbp, newbp, NODE_NEXT_POINTER_OFFSET ) != OK )
+            call error ( "quebinsert: couldn't write to old node" )
+	head(HEAD_BACK_POINTER_OFFSET) = newbp
+	}
+    if ( memput ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quebinsert: couldn't write header" )
+    if ( memput ( newbp, node, NODE_SIZE, 1 ) != OK )
+        call error ( "quebinsert: couldn't write new node" )
+
+    return
+end
+
+
+###############################################################################
+#
+###  quefremove - remove an integer from the front of a queue
+#
+#  SYNOPSIS
+#    integer qp, int, quefremove
+#    int = quefremove ( qp )
+#
+integer function quefremove ( qp )
+integer qp
+
+    integer oldfp, newfp
+    integer memget, memput, memeput, memfree
+    include "quelb.c"
+
+    if ( qp == NIL )
+	call error ( "quefremove: non-existant queue" )
+    if ( memget ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quefremove: couldn't read header" )
+    oldfp = head(HEAD_FRONT_POINTER_OFFSET)
+    if ( oldfp == NIL )
+	call error ( "quefremove: attempt to remove item from empty queue" )
+    if ( memget ( oldfp, node, NODE_SIZE, 1 ) != OK )
+        call error ( "quefremove: couldn't read node" )
+    if ( memfree ( oldfp ) != OK )
+        call error ( "quefremove: couldn't free node" )
+ifdef (STATISTICS)
+    cnodefree = cnodefree + 1
+enddef
+    quefremove = node(NODE_VALUE_OFFSET)
+    newfp = node(NODE_NEXT_POINTER_OFFSET)
+    if ( newfp == NIL ) 
+	{ #  Queue only had one item left.
+	head(HEAD_FRONT_POINTER_OFFSET) = NIL
+	head(HEAD_BACK_POINTER_OFFSET) = NIL
+	}
+    else
+	{ #  Queue had more than one item left.
+	head(HEAD_FRONT_POINTER_OFFSET) = newfp
+	if ( memeput ( newfp, NIL, NODE_PREV_POINTER_OFFSET ) != OK )
+            call error ( "quefremove: couldn't write to node" )
+	}
+    if ( memput ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quefremove: couldn't write header" )
+
+    return
+end
+
+
+###############################################################################
+#
+###  quebremove - remove an integer from the back of a queue
+#
+#  SYNOPSIS
+#    integer qp, int, quebremove
+#    int = quebremove ( qp )
+#
+integer function quebremove ( qp )
+integer qp
+
+    integer oldbp, newbp
+    integer memget, memput, memeput, memfree
+    include "quelb.c"
+
+    if ( qp == NIL )
+	call error ( "quebremove: non-existant queue" )
+    if ( memget ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quebremove: couldn't read header" )
+    oldbp = head(HEAD_BACK_POINTER_OFFSET)
+    if ( oldbp == NIL )
+	call error ( "quebremove: attempt to remove item from empty queue" )
+    if ( memget ( oldbp, node, NODE_SIZE, 1 ) != OK )
+        call error ( "quebremove: couldn't read node" )
+    if ( memfree ( oldbp ) != OK )
+        call error ( "quebremove: couldn't free node" )
+ifdef (STATISTICS)
+    cnodefree = cnodefree + 1
+enddef
+    quebremove = node(NODE_VALUE_OFFSET)
+    newbp = node(NODE_PREV_POINTER_OFFSET)
+    if ( newbp == NIL ) 
+	{ #  Queue only had one item left.
+	head(HEAD_FRONT_POINTER_OFFSET) = NIL
+	head(HEAD_BACK_POINTER_OFFSET) = NIL
+	}
+    else
+	{ #  Queue had more than one item left.
+	head(HEAD_BACK_POINTER_OFFSET) = newbp
+	if ( memeput ( newbp, NIL, NODE_NEXT_POINTER_OFFSET ) != OK )
+            call error ( "quebremove: couldn't write to node" )
+	}
+    if ( memput ( qp, head, HEAD_SIZE, 1 ) != OK )
+        call error ( "quebremove: couldn't write header" )
+
+    return
+end
+
+
+###############################################################################
+#
+###  quefront - examine the integer on the front of a queue without disturbing it
+#
+#  SYNOPSIS
+#    integer qp, int, quefront
+#    int = quefront ( qp )
+#
+integer function quefront ( qp )
+integer qp
+
+    integer fp, int, memeget
+
+    if ( qp == NIL )
+	call error ( "quefront: non-existant queue" )
+    if ( memeget ( qp, fp, HEAD_FRONT_POINTER_OFFSET ) != OK )
+        call error ( "quefront: couldn't read from header" )
+    if ( fp == NIL )
+	call error ( "quefront: attempt to get item from empty queue" )
+    if ( memeget ( fp, int, NODE_VALUE_OFFSET ) != OK )
+        call error ( "quefront: couldn't read from node" )
+    quefront = int
+
+    return
+end
+
+
+###############################################################################
+#
+###  queback - examine the integer on the back of a queue without disturbing it
+#
+#  SYNOPSIS
+#    integer qp, int, queback
+#    int = queback ( qp )
+#
+integer function queback ( qp )
+integer qp
+
+    integer bp, int, memeget
+
+    if ( qp == NIL )
+	call error ( "queback: non-existant queue" )
+    if ( memeget ( qp, bp, HEAD_BACK_POINTER_OFFSET ) != OK )
+        call error ( "queback: couldn't read from header" )
+    if ( bp == NIL )
+	call error ( "queback: attempt to get item from empty queue" )
+    if ( memeget ( bp, int, NODE_VALUE_OFFSET ) != OK )
+        call error ( "queback: couldn't read from node" )
+    queback = int
+
+    return
+end
+
+
+###############################################################################
+#
+###  queloopinit - prepare for a loop through the elements of a queue
+#
+#  SYNOPSIS
+#    integer qlp, queloopinit, qp
+#    qlp = queloopinit ( qp )
+#
+integer function queloopinit ( qp )
+integer qp
+
+    integer frontp, memeget
+
+    if ( qp == NIL )
+	call error ( "queloopinit: non-existant queue" )
+    if ( memeget ( qp, frontp, HEAD_FRONT_POINTER_OFFSET ) != OK )
+        call error( "queloopinit: couldn't read from header" )
+    queloopinit = frontp
+
+    return
+end
+
+
+###############################################################################
+#
+###  quenext - generate the next element in a queue loop
+#
+#  SYNOPSIS
+#    integer qlp, int
+#    logical anotherelement, quenext
+#    anotherelement = quenext ( qlp, int )
+#
+logical function quenext ( qlp, int )
+integer qlp, int
+
+    integer memget
+    include "quelb.c"
+
+    if ( qlp == NIL )
+	quenext = .false.
+    else
+	{
+	if ( memget ( qlp, node, NODE_SIZE, 1 ) != OK )
+	    call error ( "quenext: couldn't read node" )
+	int = node(NODE_VALUE_OFFSET)
+	qlp = node(NODE_NEXT_POINTER_OFFSET)
+	quenext = .true.
+	}
+
+    return
+end
+
+
+###############################################################################
+#                                                                             #
+#                              Stack routines.                                #
+#                                                                             #
+###############################################################################
+
+
+###############################################################################
+#
+###  stkinit - initialize a stack
+#
+#  SYNOPSIS
+#    integer sp
+#    call stkinit ( sp )
+#
+subroutine stkinit ( sp )
+integer sp
+
+    call queinit ( sp )
+
+    return
+end
+
+
+###############################################################################
+#
+###  stkclear - clear a stack
+#
+#  SYNOPSIS
+#    integer sp
+#    call stkclear ( sp )
+#
+subroutine stkclear ( sp )
+integer sp
+
+    call queclear ( sp )
+
+    return
+end
+
+
+###############################################################################
+#
+###  stkdestroy - deallocate the storage for a stack
+#
+#  SYNOPSIS
+#    integer sp
+#    call stkdestroy ( sp )
+#
+subroutine stkdestroy ( sp )
+integer sp
+
+    call quedestroy ( sp )
+
+    return
+end
+
+
+###############################################################################
+#
+###  stkempty - tell whether a stack is empty or not
+#
+#  SYNOPSIS
+#    logical isempty, stkempty
+#    integer sp
+#    isempty = stkempty ( sp )
+#
+logical function stkempty ( sp )
+integer sp
+
+    logical queempty
+
+    return ( queempty ( sp ) )
+
+end
+
+
+###############################################################################
+#
+###  stkpush - push an integer onto a stack
+#
+#  SYNOPSIS
+#    integer sp, int
+#    call stkpush ( sp, int )
+#
+subroutine stkpush ( sp, int )
+integer sp, int
+
+    call quefinsert ( sp, int )
+
+    return
+end
+
+
+###############################################################################
+#
+###  stkpop - pop an integer off of a stack
+#
+#  SYNOPSIS
+#    integer sp, int, stkpop
+#    int = stkpop ( sp )
+#
+integer function stkpop ( sp )
+integer sp
+
+    integer quefremove
+
+    return ( quefremove ( sp ) )
+
+end
+
+
+###############################################################################
+#
+###  stktop - return the value on top of a stack without popping it
+#
+#  SYNOPSIS
+#    integer sp, int, stktop
+#    int = stktop ( sp )
+#
+integer function stktop ( sp )
+integer sp
+
+    integer quefront
+
+    return ( quefront ( sp ) )
+
+end
+
+
+ifdef (STATISTICS)
+###############################################################################
+#
+###  questats - write usage statistics to ERROUT
+#
+#  SYNOPSIS
+#    call questats
+#
+subroutine questats
+
+    include "quelb.c"
+
+    call putlin ( "Queue usage statistics:", ERROUT )
+    call putch ( '@n', ERROUT )
+    call putlin ( "  queue headers allocated:", ERROUT )
+    call putint ( cheadalloc, 10, ERROUT )
+    call putch ( '@n', ERROUT )
+    call putlin ( "  queue headers freed:    ", ERROUT )
+    call putint ( cheadfree, 10, ERROUT )
+    call putch ( '@n', ERROUT )
+    call putlin ( "  queue nodes allocated:  ", ERROUT )
+    call putint ( cnodealloc, 10, ERROUT )
+    call putch ( '@n', ERROUT )
+    call putlin ( "  queue nodes freed:      ", ERROUT )
+    call putint ( cnodefree, 10, ERROUT )
+    call putch ( '@n', ERROUT )
+
+    return
+end
+enddef
+#-t-  quelb                     16089  ascii   05Jan84  08:07:58
+#-t-  quelb.all                 26027  ascii   05Jan84  08:10:39
+#-h-  prilb.all                 20877  ascii   05Jan84  08:10:42
+#-h-  printf.doc                 2370  ascii   04Jan84  11:18:53
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^printf(2)^%^printf(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+printf - formatted output to STDOUT
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+call printf( fmt, arg1, arg2, ... )
+.sp
+character fmt(ARB)
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+.bd
+Printf
+converts, formats, and prints its arguments under
+control of a format specification, and writes them to
+standard output (STDOUT). It allows the user to specify
+a format string,
+.bd
+'fmt',
+to control the output,
+and a number of items to be output :
+.bd
+arg1, arg2, etc.
+.ne 3
+.sp
+The format string contains literal characters to be printed, as
+well as formatting control structures. Formatting control structures
+consist of a percent sign,
+.bd
+'%',
+followed by characters describing the
+action to be performed on the next argument in the argument list.
+Characters in the format string that are not associated with a format
+control structure are output to the file without change.
+.ne 3
+.sp
+The format string is described in detail in the manual entry for
+.bd
+prints(2).
+.ne 3
+.sp
+EXAMPLES
+.ne 3
+.sp
+To print a string, followed by a new line ("@n") :
+.sp
+.nf
+.in +4
+call printf( '%s@n', str )
+.sp
+.fi
+.in -4
+To print two real numbers, the first in a field of five (5) with precision
+two (2), and the second in a standard field, along with some text
+for identification, followed by NEWLINE :
+.sp
+.nf
+.in +4
+call printf( 'x = %5.2g, y = %g@n', xcoord, ycoord )
+.sp
+.fi
+.in -4
+.sp
+.ne 2
+.fi
+.ti -5
+FILES
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+fprintf(2), prints(2)
+.sp
+.ne 2
+.fi
+.ti -5
+DIAGNOSTICS
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Rick Corona
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+The format string may be a ratfor string or, a quoted or hollerith
+string. For example, use of quoted or hollerith strings will work on a
+Vax, but not on the Modcomp. It is recommended that hollerith strings
+not be used if programs are to be truly portable.
+.ne 3
+.sp
+There can be no whitespace between the routine name and the left
+parenthesis of the parameter list. This is due to the fact that macro
+pre-processing does not allow spaces between the macro name and the
+definition following it.
+.ne 3
+.sp
+There is a limited number of arguments that can be formatted, depending on
+the machine being used. The current RTSG machines limit is 7 arguments.
+
+#-t-  printf.doc                 2370  ascii   04Jan84  11:18:53
+#-h-  prints.doc                 5913  ascii   04Jan84  11:18:53
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^prints(2)^%^prints(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+prints - formatted conversion into a character array
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+character dest(), fmt()
+.sp
+call prints( dest, fmt, arg1, arg2, ... )
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+.bd
+Prints
+converts and formats its arguments under
+control of a format specification. It allows the user to
+specify an array on which to write the arguments, a format to
+control the output, and any number of items to be printed.
+In
+.bd
+prints, 'dest'
+refers to a character array onto which the items should be appended,
+.bd
+'fmt'
+is a format string (discussed below), and the remaining arguments
+(zero or more) are items to be output according to format control.
+.ne 3
+.sp
+The format string contains literal characters to be printed, as
+well as formatting control structures. Formatting control structures
+consist of a percent sign
+.bd
+'%',
+followed by characters describing the
+action to be performed on the next argument in the argument list.
+Characters in the format string that are not associated with a format
+control structure are output to the file without change.
+.ne 3
+.sp
+Following the
+.bd
+%,
+there may be:
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+An optional minus sign which signifies left adjustment of the
+converted argument in its field.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+An optional digit string specifying a minimum field width. The
+converted number will be printed in a field at least this wide
+and wider if necessary. If the converted argument has fewer characters
+than the field width it will be padded on the left (or right if
+the left adjustment indicator has been given) to make up the
+field width. The padding character is usually a blank; however if
+the field with is specified with a leading zero, the padding character
+will be the digit zero.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+An optional period which separates the field width from the next optional
+digit string - the precision. If a precision is specified, the period is
+required. Precision specifies the maximum number of characters to be
+printed from a string, or the number of digits to be printed to the
+right of the decimal point.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+An optional digit string specifiying the precision. (To be used for
+real number notation and character strings.) For reals, the precision
+specifies the maximum number of digits to be output following the decimal
+point; for character strings, the precision specifies the maximum number
+of characters to be printed from a given string.
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	-
+A character which indicates the type of conversion to be applied.
+.in -6
+.ne 3
+.sp
+The conversion characters and their meanings are :
+.bd
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	d
+The argument is taken as an integer and is converted to decimal notation.
+.bd
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	o
+The argument is taken as an integer and is converted to octal notation.
+.bd
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	x
+The argument is taken as an integer and is converted to hexadecimal notation.
+.bd
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	c
+The argument is taken to be a single character.
+.bd
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	s
+The argument is taken to be a character string; characters from
+the string are printed until an EOS is found or until the number
+of characters indicated by the precision specification is reached.
+.bd
+.in -6
+.ne 3
+.sp
+.in +6
+.ta 5r
+.ti -6
+	g
+The argument is taken to be a real number. Decimal or scientific notation,
+depending on the magnitude of the number, will be used; non-significant zeros
+are not printed. (Refer to manual entry for rtoc(2).)
+.in -6
+.ne 3
+.sp
+If the character after the
+.bd
+%
+is not a conversion character, then all of the characters from the
+.bd
+%
+character to the invalid conversion character are
+simply copied to the output string.
+The
+.bd
+%
+character may be printed by the format specification
+.bd
+%%.
+.ne 3
+.sp
+In no case does a non-existent or small field width cause truncation
+of a field; padding takes place only if the specified field width exceeds
+the actual width.
+.ne 3
+.sp
+EXAMPLES
+.ne 3
+.sp
+To append a string, 'str' followed by a new line ("@n") onto a character
+array :
+.sp
+.nf
+.in +4
+call prints( buf, '%s@n', str )
+.sp
+.fi
+.in -4
+To output one real number in a field of five (5) characters with a precision
+of two (2), and a second real number, along with some text
+for identification, followed by NEWLINE :
+.sp
+.nf
+.in +4
+call prints( buf, 'x = %5.2g, y = %g@n', xcoord, ycoord )
+.sp
+.fi
+.in -4
+To convert an integer to characters and save it in an array
+(the array will be terminated by an EOS) :
+.sp
+.nf
+.in +4
+call prints( array, '%d', int)
+.sp
+.fi
+.in -4
+.sp
+.ne 2
+.fi
+.ti -5
+FILES
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+fprintf(2), printf(2)
+.sp
+.ne 2
+.fi
+.ti -5
+DIAGNOSTICS
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Rick Corona
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+The format string may be a ratfor string or, on some systems, may also
+be a quoted or hollerith string. For example, use of hollerith strings
+will work on a Vax, but not on the Modcomp. It is recommended that hollerith
+strings not be used if programs are to be truly portable.
+.ne 3
+.sp
+There can be no whitespace between the routine name and the left
+paranthesis of the parameter list. This is due to the fact that macro
+pre-processing does not allow spaces between the macro name and the definition
+following it.
+.ne 3
+.sp
+There is a limit to the number of arguments to be formatted, depending on
+the machine being used. The current RTSG machines limit is six(6) arguments.
+.ne 3
+.sp
+The Unix "printf" "%f" spec for floating point numbers is currently
+unimplemented.
+.ne 3
+.sp
+Precision is ignored for the "%g" format.
+.ne 3
+.sp
+This package cannot handle double precision arguments.
+
+#-t-  prints.doc                 5913  ascii   04Jan84  11:18:53
+#-h-  fprintf.doc                2322  ascii   04Jan84  11:18:55
+.pl 64
+.m1 2
+.m2 3
+.m3 3
+.m4 3
+.po 10
+.rm 62
+.bp 1
+.in 0
+.he ^fprintf(2)^%^fprintf(2)^
+.fo ^^- # -^^
+.in 5
+.sp
+.ne 2
+.fi
+.ti -5
+NAME
+.br
+fprintf - formatted output to a file
+.sp
+.ne 2
+.fi
+.ti -5
+SYNOPSIS
+.br
+.nf
+call fprintf( fd, fmt, arg1, arg2, ... )
+.sp
+integer fd
+character fmt(MAXLINE)
+.sp
+.ne 2
+.fi
+.ti -5
+DESCRIPTION
+.br
+.bd
+Fprintf
+converts, formats, and prints its arguments under
+control of a format specification. It allows the user to
+specify a file to write to, a format to
+control the output, and a number of items to be printed.
+In
+.bd
+fprintf, 'fd'
+is the rfi of the file to be used for output,
+.bd
+'fmt' 
+is a format string (discussed below), and the remaining arguments 
+(zero or more) are items to be output according to format control.
+.ne 3
+.sp
+The options available in a format string are discussed in the manual
+entry for
+.bd
+prints(2).  
+.ne 3
+.sp
+EXAMPLES
+.ne 3
+.sp
+To write a string, followed by a new line ("@n") onto a file ('fd') :
+.sp
+.nf
+.in +4
+call fprintf( fd, "%s@n", string )
+.sp
+.fi
+.in -4
+To write two real numbers, the first in a field of five (5) with a precision
+of two (2), and the second in a standard format, along with some text
+for identification, followed by NEWLINE :
+.sp
+.nf
+.in +4
+call fprintf( fd, 'x = %f5.2, y = %f@n', xcoord, ycoord )
+.sp
+.fi
+.in -4
+To convert an integer to characters :
+.sp
+.nf
+.in +4
+call fprintf( fd, '%d', int)
+.sp
+.fi
+.in -4
+.sp
+.ne 2
+.fi
+.ti -5
+FILES
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+SEE ALSO
+.br
+.nf
+prints(2), printf(2)
+.sp
+.ne 2
+.fi
+.ti -5
+DIAGNOSTICS
+.br
+None
+.sp
+.ne 2
+.fi
+.ti -5
+AUTHOR(S)
+.br
+Rick Corona
+.sp
+.ne 2
+.fi
+.ti -5
+BUGS/DEFICIENCIES
+.br
+The format string may be a ratfor string or, on some systems, may also
+be a quoted or hollerith string. For example, use of quoted or hollerith
+strings will work on a Vax, but not on the Modcomp. It is recommended that
+hollerith strings not be used in programs if they are to be truly portable.
+.ne 3
+.sp
+There can be no whitespace between the routine name and the left parenthesis
+of the parameter list. This is due to the fact that macro pre-processing
+does not allow spaces between the macro name and the defintion following it.
+.ne 3
+.sp
+There is a limit to the number of arguments that can be formatted, depending
+on the machine being used. The current RTSG machines limit is 7 arguments.
+
+#-t-  fprintf.doc                2322  ascii   04Jan84  11:18:55
+#-h-  prilb                      9752  ascii   04Jan84  11:18:55
+### prilb - formatted output routines printf, prints and fprintf.
+#
+# Modifications.
+# --------------
+# 02g 19Jul83  CAL .Ratfix. Modified to not call esc() since the new
+#                   handles all escape sequences.
+# 02f 12Jul83  JIC .CHanged all references to itob() to gitoc().
+# 02e 05Jul83  ANT .Changed all references to fesc() to esc().
+# 02d 16Jun83  ANT .Changed all references to esc() to fesc().
+# 02c 21May83  CAL .Fixed bugs with format character doubling and
+#                   string precision.
+# 02b 07May83  CAL .Modified pridft() to not call error() when the format
+#                   string is botched; instead we ingore the special
+#                   properties of the format character.
+#                  .Removed precision handling code from the 'g' type
+#                   since rtoc just isn't smart enough.
+#                  .Recoded to be more efficient.
+#                  .Modified so that string precision works.
+# 02a 29Apr83  CAL .Modified pridft() to conform to the manual entry;
+#                   specifically, capabilities were added to provide
+#                   for padding, left justified padding, and adjustable
+#                   precision. Also, 1200 characters of temporary storage
+#                   were removed.
+# 01b 12Nov82  RC  .Fixed format '%x' to convert to base 16, and corrected
+#                   erraneous coding. Both changes occurred in pridft.
+# 01a 17Oct82  RC  .Written.
+#
+define(FMTCHAR,'%')
+define(NUMERICSIZE,128)
+
+
+### pritf - formatted output to STDOUT
+#
+# synopsis
+#   call pritf( fmt, X1, X2, ... )
+#
+# description
+#   takes a format string and an arbitrary number of arguments, formats
+#   the arguments as specified by the format string, and writes them to
+#   standard output.
+#
+# passed
+#   fmt - format string
+#   X1, X2, ... - arguments to be formatted
+#
+# returned
+#   formatted line(s) to standard output
+#
+subroutine pritf( fmt, X1, X2, X3, X4, X5, X6, X7, X8, X9 )
+character fmt(ARB)
+integer X1, X2, X3, X4, X5, X6, X7, X8, X9
+
+    call priftf( STDOUT, fmt, X1, X2, X3, X4, X5, X6, X7, X8, X9 )
+
+    return
+
+end
+
+
+### priftf - format output to a file
+#
+# synopsis
+#   call priftf( fd, fmt, X1, X2, ... )
+#
+# description
+#   takes a file descriptor for a file on which to write, a format
+#   string, and an arbitrary number of arguments; appends the arguments
+#   onto the file as specified by the format given.
+#
+# passed
+#   fd - file descriptor for file on which to write
+#   fmt - format string
+#   X1, X2, ... - arguments to be formatted
+#
+# returned
+#   formatted line(s) of output
+#
+subroutine priftf( fd, fmt, X1, X2, X3, X4, X5, X6, X7, X8, X9 )
+integer fd
+character fmt(ARB)
+integer X1, X2, X3, X4, X5, X6, X7, X8, X9
+
+    character buf(MAXLINE)
+
+    call prits( buf, fmt, X1, X2, X3, X4, X5, X6, X7, X8, X9 )
+    call putlin( buf, fd )
+
+    return
+
+end
+
+
+### prits - format output
+#
+# synopsis
+#   call prits( dst, fmt, X1, X2, ... )
+#
+# description
+#   takes an array on which to write, a format string, and
+#   an arbitrary number of arguments; appends the arguments
+#   onto the array as specified by the format given.
+#
+# passed
+#   dst - character array on which to write
+#   fmt - format string
+#   X1, X2, ... - arguments to be formatted
+#
+# returned
+#   formatted line(s) of output
+#
+subroutine prits( dst, fmt, X1, X2, X3, X4, X5, X6, X7, X8, X9 )
+character dst(ARB), fmt(ARB)
+integer X1, X2, X3, X4, X5, X6, X7, X8, X9
+
+    integer dstptr, fmtptr
+
+    fmtptr = 1
+    dstptr = 1
+    dst(dstptr) = EOS		# we start out with an empty string
+
+    call prifft( fmt, fmtptr, dst, dstptr )
+
+    # Only look for a new format character if we have format left...
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X1, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X2, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X3, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X4, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X5, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X6, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X7, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X8, dst, dstptr )
+    if ( fmt(fmtptr) == EOS )
+	return
+    call prifmt( fmt, fmtptr, X9, dst, dstptr )
+
+    return
+
+end
+
+
+### prifft - append characters until format character is found
+#
+# description
+#   Scans the format string, appending characters, until a format
+#   character or EOS is found; upon exit, fmtptr either points one
+#   character after a format character or to the EOS.
+#
+# passed
+#   fmt - format string
+#   fmtptr - pointer to character position in format string
+#   dst - character array on which to append
+#   dstptr - pointer to character position in output string
+#
+subroutine prifft( fmt, fmtptr, dst, dstptr )
+character fmt(ARB)
+integer fmtptr
+character dst(ARB)
+integer dstptr
+
+    while ( fmt(fmtptr) != EOS )
+	{
+	if ( fmt(fmtptr) == FMTCHAR )
+	    {
+	    fmtptr = fmtptr + 1
+	    if ( fmt(fmtptr) != FMTCHAR & fmt(fmtptr) != EOS )
+		break
+	    else
+		if ( fmt(fmtptr) == EOS )
+		    fmtptr = fmtptr - 1
+	    }
+	dst(dstptr) = fmt ( fmtptr )
+	dstptr = dstptr + 1
+	fmtptr = fmtptr + 1
+	}
+
+    dst(dstptr) = EOS
+
+    return
+
+end
+
+
+### prifmt - format arguments and search for additional format specifiers
+#
+# description
+#   Converts argument 'Xn' according to the format control specification
+#   found at fmt(fmtptr), and appends trailing non-format characters until
+#   a new format specification is found. A pointer to the new specifier
+#   is returned.
+#
+# passed
+#   fmt - format string
+#   fmtptr - pointer to character position in format string
+#   arg - argument to be converted according to format specification
+#   dst - character array on which to append
+#   dstptr - pointer to character position in output string
+#
+subroutine prifmt( fmt, fmtptr, arg, dst, dstptr )
+character fmt(ARB)
+integer fmtptr, arg
+character dst(ARB)
+integer dstptr
+
+    call pridft( fmt, fmtptr, arg, dst, dstptr )
+
+    # Look for another format character.
+    if ( fmt(fmtptr) != EOS )
+        call prifft( fmt, fmtptr, dst, dstptr )
+
+    return
+
+end
+
+
+### pridft - process format specifications
+#
+# description
+#   converts arguments as specifed by format, adds justification, precision,
+#   and field width, and appends encoded string to 'dst'; returns new
+#   'fmtptr'
+#
+# passed
+#   fmt - format string
+#   fmtptr - pointer to character position in format string
+#   arg - argument argument to be converted according to format specification
+#   dst - character array on which to append
+#   dstptr - pointer to character position in output string
+#
+subroutine pridft( fmt, fmtptr, arg, dst, dstptr )
+character fmt(ARB)
+integer fmtptr, arg
+character dst(ARB)
+integer dstptr
+
+    integer i, j, lastptr, fldwth, precis, index, length, rtoc, ctoi
+    logical leftjust, copystr
+    character clower, type, padchar, buf(NUMERICSIZE)
+
+    # Remember where the format character is in case we need it later.
+    lastptr = fmtptr - 1
+
+    # Leading MINUS means left justify.
+    if (fmt(fmtptr) == '-')
+	{
+	fmtptr = fmtptr + 1
+	leftjust = .true.
+	}
+    else
+	leftjust = .false.
+
+    # Decode field width and padding character.
+    fldwth = 0
+    padchar = ' '
+    if (type( fmt(fmtptr) ) == DIGIT)
+	{
+	if (fmt(fmtptr) == '0')
+	    padchar = '0'
+
+	fldwth = ctoi( fmt, fmtptr )
+	}
+
+    # Decode precision, if necessary.
+    if (fmt(fmtptr) == '.')
+	{
+	fmtptr = fmtptr + 1
+	precis = ctoi( fmt, fmtptr )
+	}
+    else
+	precis = -1			# default to no precision
+
+    # Convert argument to a string.
+    buf(1) = EOS
+    copystr = .false.
+    switch ( clower( fmt(fmtptr) ) )
+	{
+	case 'd':
+	    call gitoc( arg, buf, NUMERICSIZE, 10 )
+
+	case 'o':
+	    call gitoc( arg, buf, NUMERICSIZE, 8 )
+
+	case 'x':
+	    call gitoc( arg, buf, NUMERICSIZE, 16 )
+
+	case 'c':
+	    call appchr( arg, buf )
+
+	case 's':
+	    copystr = .true.
+
+#	case LETF:
+#	    i = rtocf( arg, buf, MAXLINE )
+#	    if ( precis >= 0 )
+#		{
+#		i = index ( buf, PERIOD )
+#		if ( i > 0 )
+#		    if ( precis == 0 )
+#			buf(i) = EOS
+#		    else
+#			buf(i + precis + 1) = EOS
+#		}
+
+	case 'g':
+	    i = rtoc( arg, buf, MAXLINE )	# should handle precision
+	
+	default:
+	    # Invalid format specifier, so do a GIGO.
+	    call scopy ( fmt, lastptr, dst, dstptr )
+	    dstptr = dstptr + fmtptr - lastptr + 1
+	    fmtptr = fmtptr + 1
+	    dst(dstptr) = EOS
+
+	    return
+
+	}
+
+    # By now, the thing we want to format is either in buf or arg.
+    # Calculate the amount of padding desired. Precision in a string
+    # is a special case.
+    if ( ! copystr )
+	j = length ( buf )
+    else
+	{
+	if ( precis >= 0 )
+	    {
+	    j = min ( length ( arg ), precis )
+	    precis = j
+	    }
+	else
+	    j = length ( arg )
+	}
+    i = fldwth - j
+    if ( i < 0 )
+	i = 0
+    
+    # Handle right justification.
+    if ( ( ! leftjust ) & ( i > 0 ) )
+	for ( ; i > 0; i = i - 1 )
+	    {
+	    dst(dstptr) = padchar
+	    dstptr = dstptr + 1
+	    }
+
+    # Append the argument to the output string. If the argument
+    # was a string, append it using the precision (if necessary).
+    if ( ! copystr )
+	call stcopy( buf, 1, dst, dstptr )
+    else
+	if ( precis < 0 )
+	    call stcopy( arg, 1, dst, dstptr )
+	else
+	    {
+	    # Precision for a string.
+	    call scopy( arg, 1, dst, dstptr )
+	    dstptr = dstptr + precis
+	    }
+
+    # Handle left justification.
+    if ( ( leftjust ) & ( i > 0 ) )
+	for ( ; i > 0; i = i - 1 )
+	    {
+	    dst(dstptr) = padchar
+	    dstptr = dstptr + 1
+	    }
+    dst(dstptr) = EOS
+
+    # Step over the format specifier.
+    fmtptr = fmtptr + 1
+
+    return
+
+end
+#-t-  prilb                      9752  ascii   04Jan84  11:18:55
+#-t-  prilb.all                 20877  ascii   05Jan84  08:10:42
+                                                                                                                                                                                                                                                                                                                                                              

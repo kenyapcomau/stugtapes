@@ -1,0 +1,112 @@
+#-h-  cat.doc                     966  local   01/07/81  00:25:09
+.bp 1
+.in 0
+.he 'CAT (1)'02/16/78'CAT (1)'
+.fo ''-#-'
+.fi
+NAME
+.br
+.in 7
+cat -- concatenate and print text files
+.sp 1
+.in
+SYNOPSIS
+.br
+.in 7
+cat [file] ...
+.sp 1
+.in
+DESCRIPTION
+.br
+.in 7
+Cat reads each file in sequence and writes it on the standard output.
+Thus
+.sp 1
+.ti +5
+cat file
+.sp 1
+prints the file;
+.sp 1
+.ti +5
+cat file1 file2 >file3
+.sp 1
+concatenates the first two files and places the result on the third,
+and,
+.sp 1
+.ti +5
+cat file >>out
+.sp 1
+appends 'file' onto the back of 'out'.
+.sp 1
+If no argument or '-' is given, cat reads the standard input.
+.sp 1
+.in
+FILES
+.br
+.in 7
+None
+.sp 1
+.in
+SEE ALSO
+.br
+.in 7
+The "Software Tools" book, p. 77.
+.br
+crt, pg (if implemented)
+.sp 1
+.in
+DIAGNOSTICS
+.br
+.in 7
+A message is printed if a file cannot be opened;
+further processing is terminated.
+.sp 1
+.in
+AUTHORS
+.br
+.in 7
+.sp 1
+B. Kernighn & P. J. Plauger
+.sp 1
+.in
+BUGS
+.br
+.in 7
+Using the same file for output as well as input may
+cause strange results.
+#-t-  cat.doc                     966  local   01/07/81  00:25:09
+#-h-  cat          655  local  09/12/80  17:06:20
+ #   include the standard symbol definitions
+
+# cat - concatenate named files onto standard output
+
+   DRIVER(cat)
+
+   character name (FILENAMESIZE)
+
+   integer i
+   integer getarg
+
+   filedes fd
+   filedes open
+
+   call query ("usage:  cat [files].")
+
+   for (i = 1; getarg (i, name, FILENAMESIZE) != EOF; i = i + 1) {
+      if (name (1) == MINUS & name (2) == EOS)
+         fd = STDIN
+      else
+         fd = open (name, READ)
+      if (fd == ERR)
+         call cant (name)
+      call fcopy (fd, STDOUT)
+      if (fd != STDIN)
+         call close (fd)
+      }
+
+   if (i == 1)          # no arguments
+      call fcopy (STDIN, STDOUT)
+
+   DRETURN
+   end
+#-t-  cat          655  local  09/12/80  17:06:20

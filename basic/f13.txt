@@ -1,0 +1,2471 @@
+#-h-  sh.doc                    11166  local   01/06/81  17:02:49
+.bp 1
+.in 0
+.he 'SH'1/16/79'SH'
+.fo ''-#-'
+.fi
+.in 7
+.ti -7
+NAME
+.br
+sh - shell (command line interpreter)
+.sp 1
+.ti -7
+SYNOPSIS
+.br
+sh
+[-vnx] [name [arg1 ..[arg9]]].
+.sp 1
+.ti -7
+DESCRIPTION
+.br
+Sh
+is a command line interpreter:
+it reads lines typed by the user and interprets them as requests to
+execute other programs.
+
+
+.ul
+Commands.
+.br
+In simplest form, a command line consists of the command name followed
+by arguments to the command, all separated by spaces:
+.ce
+command arg1 arg2 ... argn
+The shell splits up the command name and the arguments into separate
+strings.
+Then a file with name
+command
+is sought;
+command
+may be a path name to specify any file in the system.
+If
+command
+is found, it is brought into memory and executed.
+The arguments collected by the shell are accessible to the command.
+When the command is finished, the shell resumes its own execution and
+indicates its readiness to accept another command by typing a
+prompt character.
+
+If file
+command
+cannot be found in the current directory or through its pathname, the
+shell searches a specific system directory of commands intended
+to be available to sh users in general.
+
+An example of a simple command is:
+.ce
+sort list
+which would look for the tool 'sort' in the current directory,
+then in the system directory, and
+then sort the contents of file 'list', printing the
+output at the user's terminal.
+
+Some characters on the command line have special meanings to the
+shell (these are discussed below).
+The character '@' may be included anywhere in the command line
+to cause the following character to lose any special meaning
+it may have to the shell (to be 'escaped').
+Sequences of characters enclosed in double (") or single (')
+quotes are also taken literally.
+
+
+.ul
+Standard I/O
+.br
+Shell programs in general have open three standard files:
+'input', 'output', and 'error output'.
+All three are assigned to the user's terminal unless redirected by
+the special arguments '<', '>', '?', '>>', '??', (and sometimes
+'-').
+
+An argument of the form '<name' causes the file
+'name' to be used as the standard input file of the associated
+command.
+
+An argument of the form '>name' causes file 'name' to be used
+as the standard output.
+
+An argument of the form '?name' causes the file 'name' to be used
+as the standard error output.
+
+Arguments of the form '>>name' or '??name' cause program output
+to be appended to 'name' for standard output or error output
+respectively.
+If 'name' does not exist, it will be created.
+
+Most tools have the capability to read their input from a series
+of files.
+In this case, the list of files overrides reading from standard
+input.
+However, many of the tools allow the user to read from both a list
+of files and from input by specifying the filename '-' for
+standard input.
+For example,
+.ce
+roff file1 - file2
+would read its input from 'file1', then from the standard input,
+then from 'file2'.
+
+
+.ul
+Filters and Pipes.
+.br
+The output from one command may be directed to the input of another.
+A sequence of commands separated by vertical bars (|) or carets ('^')
+causes the shell to arrange that the standard output of each command
+be delivered to the standard input of the next command in sequence.
+Thus in the command line:
+.ce
+sort list | uniq | crt
+'sort' sorts the contents of file 'list';
+its output is passed to 'uniq',
+which strips out duplicate lines.
+The output from 'uniq' is then input to 'crt', which prepares
+the lines for viewing on the user's crt terminal.
+
+The vertical bar is called a 'pipe'.
+Programs such as 'sort', 'uniq', and 'crt', which copy standard
+input to standard output (making some changes along the way) are called
+'filters'.
+
+
+.ul
+Command separators
+.br
+Commands need not be on different lines; instead they may be
+separated by semicolons:
+.ce
+ar t file; ed
+The above command will first list the contents of the archived
+file 'file', then
+enter the editor.
+
+The shell also allows commands to be grouped together with
+parentheses, where the group can then be used as a filter.
+For example,
+.ce
+(date; cat chocolate) | comm vanilla
+writes first the date and then the file 'chocolate' to standard
+output, which is then read as input by 'comm'.
+This tool compares the results with existing file 'vanilla' to
+see which lines the two files have in common.
+
+
+.ul
+Multitasking
+.br
+On many systems the shell also allows processes to be executed
+in the background.
+If a command is followed by '&', the shell will not wait for the
+command to finish before prompting again; instead,
+it is ready immediately to accept a new command.
+For instance,
+.ce
+ratfor ambrose >george &
+preprocesses the file 'ambrose', putting the output on 'george'.
+No matter how long the compilation takes,
+the shell returns immediately.
+The identification number of the process running that command is
+printed.
+This identification may be used to wait for the completion of
+the command or to terminate it.
+
+The '&' may be used several times in a line.
+Parentheses and pipes are also allowed (within the same background
+process).
+
+
+.ul
+Script files.
+.br
+The shell itself is a command, and may be called recursively,
+either implicitly or explicitly.
+This is primarily useful for executing files containing lines
+of shell commands.
+For instance, suppose you had a file named 'nbrcount'
+which looked like this:
+.in +15
+.nf
+echo 'Counting strings of digits'
+tr <program 0-9 9 | tr !9 | wc -c
+.fi
+.in -15
+These commands count all the digit strings in 'program'.
+You could have the shell execute the commands by typing:
+.ce
+sh nbrcount
+The shell will also execute script files implicitly.
+For example, giving the command
+.ce
+nbrcount
+would cause the shell to notice that the file 'nbrcount' contained
+text rather than executable code.
+The shell would then execute itself again, using 'nbrcount' as
+its input.
+
+Arguments may also be passed to script files.
+In script files, character sequences of the form '$n',
+where n is a digit between 1 and 9, are replaced by the
+nth argument to the invocation of the shell.
+For instance, suppose the file 'private' contained the following
+commands:
+.in +15
+.nf
+cat $1 $2 $3 | crypt key >$4
+ar u loveletters $4
+.fi
+.in -15
+Then, executing the command
+.ce
+private Dan John Harold fair
+would merge the files 'Dan', 'John', and 'Harold', encrypt
+them, and store them away in an archive under the name 'fair'.
+
+Script files may be used as filters in pipelines just like regular
+commands.
+
+Script files sometimes require in-line data to be available to them.
+A special input redirection notation "<<" is used to achieve this effect.
+For example, the editor normally takes its commands from the standard
+input.
+However, within a shell procedure commands could be embedded this way:
+
+                           ed file <<!
+                           editing requests
+                           !
+
+The lines between <<! and ! are called a 'here' document; they are read
+by the shell and made available as the standard input.
+The character '!' is arbitrary, the document being terminated by a line
+that consists of whatever character followed the <<.
+
+
+
+.ul
+Shell Flags.
+.br
+The shell accepts several special arguments when it is invoked.
+The argument -v asks the shell to print each line of a script
+file as it is read as input.
+For instance,
+.ce
+sh -v private Jasmine Irma Jennifer twostars
+would print each line of the script file 'private' as soon as
+it is read by the shell.
+
+The argument -x is similar to the -v above except that commands
+are printed right before they are executed.
+These commands will be printed in the actual format the
+system expects when attempting to execute the program.
+
+The argument -n suppresses execution of the command entirely.
+
+The argument -c causes the remaining arguments to be executed
+as a shell command.
+
+
+.ul
+Termination.
+.br
+The shell may be left by typing an end-of-file or by typing
+'logout' as a command.
+
+
+.ne 5
+.ti -7
+FILES
+.br
+Scratch files for pipelines are created with the names "Pn"
+where n is the number of the pipe on the command line
+(e.g. 1, 2, etc.).
+Scratch files named "doc" are created for 'here documents'.
+.sp 1
+.ti -7
+SEE ALSO
+.br
+The Unix command 'sh'
+.br
+The Bell system Technical Journal, vol. 57, no. 6, part 2,
+July-Aug 1978
+
+.sp 1
+.ti -7
+DIAGNOSTICS
+.br
+.in +4
+.ti -4
+cannot locate shell
+.br
+Issued whenever the shell is attempting to spawn a copy of itself to
+process a script file.
+The shell was unable to find the correct file.
+(The file is set in a string declaration in the "scrf" routine.)
+.sp
+.ti -4
+cannot spawn background process
+.br
+Spawn returned an error status when attempting to execute a command
+in the background.
+Possibly system quotas were overflowed.
+.sp
+.ti -4
+cannot spawn process
+.br
+The requested task could not be executed by "spawn".
+Generally indicates some sort of system problem.
+.sp
+.ti -4
+can't open 'here document'
+.br
+The shell creates a temporary file for each 'here document'
+and this file could not be created for some reason.
+Perhaps the maximum number of opened files has been exceeded
+or the user does not have the appropriate privileges for
+creating files.
+.sp
+.ti -4
+can't open teletype channel
+.br
+The shell was attempting to open an output channel to the user's
+teletype for prompting and was unable to do so.
+.sp
+.ti -4
+dopar -- invalid token following parenthesis
+.br
+Syntax error on the command line.
+.sp
+.ti -4
+empty command
+.br
+Parentheses, pipes, or other shell characters showed up without
+any commands between them.
+.sp
+.ti -4
+invalid shell command
+.br
+An unlikely error which means part of the code thought it had
+found a shell command, but another part thought it hadn't.
+.sp
+.ti -4
+invalid task
+.br
+Printed whenever a command could not be located
+in the various directories searched.
+.sp
+.ti -4
+mktree -- tree buffer size exceeded
+.br
+The parse tree overflowed.
+Its size is determined by the TREESIZE definition in the source code.
+.sp
+.ti -4
+stack size exceeded
+.br
+The size of a stack of pointers into the parse tree was exceeded.
+The size of the stack is determined by the MAXSTACK definition
+in the source code.
+.sp
+.ti -4
+syntax error
+.br
+There was some sort of error in the syntax of the command line.
+Sometimes a suggested reason is printed.
+.sp
+.ti -4
+unbalanced quotes
+.br
+There weren't matching pairs of single and/or double quotes
+.sp
+.ti -4
+unbalanced right parenthesis
+.br
+.ti -4
+unbalanced left parenthesis
+.br
+Unmatched parentheses
+.sp
+.ti -4
+too many characters pushed back
+.br
+There were some horrible problems in attempting to read
+the input line and put characters back onto a stack for
+re-reading.
+The size of the stack is determined by the BUFSIZE definition
+in the source code.
+.sp
+.in -4
+.nf
+execut -- invalid parse tree
+mktree -- too many children
+setree -- doubly defined argument
+.in +4
+.br
+These are primarily debugging aids for the parser.
+Contact a systems programmer if they show up...
+.in -4
+.sp 1
+.ti -7
+AUTHORS
+.br
+.sp 1
+Dennis Hall, Debbie Scherrer, Joe Sventek
+(Lawrence Berkeley Laboratory)
+.sp 1
+.ti -7
+BUGS/DEFICIENCIES
+.br
+If a user wants to escape a shell special character that appears
+as the first character of an argument, he must escape it with
+quotes rather than an '@' sign.
+#-t-  sh.doc                    11166  local   01/06/81  17:02:49
+#-h-  stdsub                     1471  local   01/06/81  17:02:52
+ # /stdsub/ - common block holding file info for shell
+ # put on a file named 'stdsub'
+ # Used only  by the shell
+ 
+ common /stdsub/ in, cin(MAXSTACK), out, cout(MAXSTACK), 
+                 er, cerr(MAXSTACK), aout(MAXSTACK),
+                 script, 
+                 pctr, pfiles(FILENAMESIZE,MAXSTACK),
+                 hfile(FILENAMESIZE),
+                 input(FILENAMESIZE), output(FILENAMESIZE),
+                 error(FILENAMESIZE), sh(FILENAMESIZE),
+		 spath(MAXPATHSIZE)
+ integer in             #input stack count
+ integer cin            #input substitution stack
+ integer out            #output stack count
+ integer cout           #output stack
+ integer er             #errout stack count
+ integer cerr           #errout stack
+ integer aout           #append flag
+ integer script         #flag showing if script file being processed
+ integer pctr           #running pipe count
+ character pfiles       #names of pipe files
+ character hfile        #names of heredocument files
+ character input        #holds name of standard input file for script
+                        #init input(1) = EOS
+ character output       #holds name of standard output file for script
+                        #init output(1) = EOS
+ character error        #holds name of standard error file for script;
+                        #init error(1) = EOS
+ character sh		# holds name of shell for script and background
+ character spath	# search path for loccom calls - initialized by initsh
+#-t-  stdsub                     1471  local   01/06/81  17:02:52
+#-h-  cpars                       537  local   01/06/81  17:02:52
+ # /cpars/ - holds token and tree info for shell
+ # put on a file called 'cpars'
+ # Used only by the shell
+ 
+ common /cpars/ ibuf(MAXLINE), tkbuf(TSIZE, MAXTOK),
+                tree(TREESIZE), stack(MAXSTACK),
+                treend, pp
+ character ibuf         #input buffer
+ integer tkbuf          #token table for parsing
+ integer tree           #parse tree
+ integer stack          #push down stack for tokens
+ integer treend         #next available tree node; init  by parse
+ integer pp             #push down counter; init by parse
+#-t-  cpars                       537  local   01/06/81  17:02:52
+#-h-  shflag                      761  local   01/06/81  17:02:52
+ # shflag - common block to hold shell flags
+ # put on a file called 'shflag'
+ # Used only by the shell
+ 
+   
+ common /shflag/ exec, prlin, prcom, carg, drop, shin, clin(MAXLINE)
+ 
+ integer exec   #flag to cause/suppress command execution
+                #init = YES
+ integer prlin  #flag to cause printing of lines as read
+                #init = NO
+ integer prcom  #flag to cause printing of command as executed
+                #init = NO
+ integer carg   #flag to cause execution of shell command line as input
+                #init = NO
+ integer drop	# flag to cause drop through to native CLI upon search
+		# error - init = YES
+ integer shin   #file identifier for shell input (generally STDIN)
+ character clin #buffer to hold shell arg to be used as input
+#-t-  shflag                      761  local   01/06/81  17:02:52
+#-h-  shcmd                       533  local   01/06/81  17:02:53
+ ## shcmd - common block holding shell commands
+ # Put on a file called 'shcmd'
+ # Used only by the shell
+ 
+ common /shcmd/ logout(7), cd(3), home(5),
+                von(4), voff(5), xon(4), xoff(5)
+ 
+ character logout       #logout (same as end-of-file)
+ character cd		# change working directory - cd
+ character home		# change working directory to home directory
+ character von		# equivalent to -v in command line
+ character voff		# turns off von
+ character xon		# equivalent to -x in command line
+ character xoff		# turns off xon
+#-t-  shcmd                       533  local   01/06/81  17:02:53
+#-h-  cdefio                      279  local   01/06/81  17:02:53
+ ## preprocessor common block to hold input characters
+ # Put on a file called 'cdefio'
+ # Used by ratfor preprocessor, macro, form, and shell tools
+ 
+ common /cdefio/ bp, buf(BUFSIZE)
+   integer bp		# next available character; init = 0
+   character buf	# pushed-back characters
+#-t-  cdefio                      279  local   01/06/81  17:02:53
+#-h-  sh.r                      54723  local   01/06/81  17:04:59
+#-h-  shsym                      1660  local   01/06/81  16:58:54
+ # definitions for shell
+ 
+ #---------------------------------------------------------------
+ # You might want to adjust these:
+ define(SCRIPT_EXT,"")      # possible extension for script file names
+ define(IMAGE_EXT,"")       # possible extension for image file names
+ define(USRBINDIR,"")       # name of directory holding tools
+ define(USRDIR,"")          # name of directory holding generally
+                                # used user utilities
+ #----------------------------------------------------------------
+ 
+ define(TSIZE,4)
+ define(MAXSHLINE,MAXLINE)  #maximum command line length
+ define(SHELL,17)       #flag for shell command
+ define(IBPTR,1)        #array index for token pointers
+ define(TMARK,2)         #array index for token marks
+ define(NODEPTR,3)        #array index for node pointers
+ define(ESCAN,4)        #array index for end of scan
+ define(MAXTOK,132) #max token size
+ define(TREESIZE,200)   #max size of tree 
+ define(ROOT,-1)        #flag for beginning of tree
+ define(PARENT,1)
+ define(NTYPE,2)
+ define(LCHILD,3)
+ define(RCHILD,4)
+ define(REDIN,5)
+ define(REDOUT,6)
+ define(REDERR,7)
+ define(NENT,8)
+ define(CMD,9)
+ define(ARGUMENT,10)
+ define(COM,LETC)
+ define(SSYNTAX,0)
+ define(SSYN1,1)
+ define(SSYN2,2)
+ define(SSYN3,3)
+ define(MAXSTACK,20)
+ define(PIPE,BAR)
+ define(SEPCHAR,SEMICOL)	# character to separate commands on line
+ define(SCRIPT,2)
+ define(OWNER,-1)               #flag for receiving message from parent
+ define(BUFSIZE,MAXLINE)
+ define(MAXPATHSIZE,80)		# maximum size of search path
+ define(BINDIRECTORY,1)         # flag for usrbin directory
+ define(USRDIRECTORY,2)         # flag for user utility directory
+ 
+#-t-  shsym                      1660  local   01/06/81  16:58:54
+#-h-  shs                         412  local   01/06/81  17:04:39
+ ## sh - driver for LBL shell
+ 
+ DRIVER(sh)
+ 
+ character line(MAXSHLINE)
+ integer parser, shline
+
+ call initsh
+ repeat
+        {
+        if (shline(line) == EOF)
+                break
+        if (line(1) == NEWLINE | line(1) == SHARP)
+                next
+        if (parser(line) == ERR)
+                call remark ('syntax error.')
+        else
+                call execut
+        }
+ call endsh
+ DRETURN
+ end
+#-t-  shs                         412  local   01/06/81  17:04:39
+#-h-  arglin                      587  local   01/06/81  16:58:55
+ ## arglin - pick up all arguments starting with i
+ subroutine arglin (buf, i)
+ character buf(ARB), line(MAXLINE)
+ integer i, k, m
+ integer getarg
+ 
+ k = 1
+ for (j=i; getarg(j, line, MAXLINE) != EOF; j=j+1)
+        {
+        if (line(1) == ESCAPE & 
+            (line(2) == LESS | line(2) == GREATER | line(2) == QMARK))
+                m = 2
+        else
+                m = 1
+        call scopy(line, m, buf, k)
+        k = length(buf) + 2
+        buf(k-1) = BLANK
+        }
+ if (k > 1)
+        k = k - 1               #delete last blank
+ buf(k) = NEWLINE
+ buf(k+1) = EOS
+ return
+ end
+#-t-  arglin                      587  local   01/06/81  16:58:55
+#-h-  atbeg                       414  local   01/06/81  16:58:55
+ ## atbeg - return YES if at beginning of new shell token
+ integer function atbeg(c)
+ character c
+ integer spec
+ 
+ if (spec(c) == YES |                   #special shell character
+     c == LESS | c == GREATER | c == QMARK |    #redirected IO
+     c == BLANK | c == TAB |            #arg separator
+     c == SQUOTE | c == DQUOTE)         #new quoted string
+        atbeg = YES
+ else
+        atbeg = NO
+ return
+ end
+#-t-  atbeg                       414  local   01/06/81  16:58:55
+#-h-  cmdtyp                      489  local   01/06/81  16:58:56
+ ## cmdtyp - check command and prepare for appropriate fetching
+ 
+ integer function cmdtyp (comand, path)
+ character comand(ARB), path(ARB)
+ integer equal, shcom
+ integer loccom
+
+ include stdsub
+
+ string local "local"
+ string execut "x"
+ 
+ call scopy(comand, 1, path, 1)
+ if (shcom(comand) == YES)
+        cmdtyp = SHELL
+ else if (equal(comand, execut) == YES)
+    {
+    call scopy(local, 1, path, 1)
+    cmdtyp = BINARY
+    }
+ else
+    cmdtyp = loccom(comand, spath, path)
+ 
+ return
+ end
+#-t-  cmdtyp                      489  local   01/06/81  16:58:56
+#-h-  doampr                      706  local   01/06/81  16:58:56
+ ## doampr - process ampersand node of parse tree
+ subroutine doampr (node, dir)
+ integer node, dir, i
+ integer spawn, getcl
+ character desc(PIDSIZE)
+ include stdsub    
+ include cpars
+ include shflag
+
+ string first "sh -c "
+ 
+ if (dir == RCHILD | dir == PARENT)
+        return
+ i = 1
+ call stcopy(first, 1, clin, i)
+ if (getcl(node, dir, clin(i)) == ERR)
+        return
+ if (prcom == YES)              #user wishes to see command
+        call dspcom(sh, clin)
+ if (exec == YES)               #execute command
+        {
+        if (spawn(sh, clin, desc, BACKGR) == ERR)
+                call remark ('Cannot spawn background process.')
+        else
+                call remark (desc)
+        }
+ return
+ end
+#-t-  doampr                      706  local   01/06/81  16:58:56
+#-h-  docom                      2056  local   01/06/81  16:58:58
+ ## docom - process command node of parse tree
+ subroutine docom (node, dir)
+ integer node, i, j, type, dir
+ integer spawn
+ integer cmdtyp, equal
+ integer pickup, inf, outf, errf, length
+ character buf(MAXLINE), local(6)
+ character comand(FILENAMESIZE), desc(PIDSIZE)
+ include shflag    
+ include shcmd
+ data local/LETL, LETO, LETC, LETA, LETL, EOS/
+
+                                #pick up command
+ junk = pickup(buf, node, CMD, junk)
+ call fold(buf)
+ type = cmdtyp(buf, comand)  #check task and prepare command call
+ if (type == ERR & drop == NO)
+        {
+        call remark ('invalid task.')
+        return
+        }
+ if (equal(comand, local) == YES | type == SHELL)
+    j = 1
+ else
+    {
+    j = length(buf) + 2
+    buf(j-1) = BLANK
+    }
+ if (type == ASCII)
+        call scrf(node, comand, buf)
+ 
+ else                           #pick up arguments
+        {
+	if (type == ERR)
+	    call scopy(local, 1, comand, 1)
+         for (i=1; pickup(buf(j),node,ARGUMENT,i) != ERR; i=i+1)
+                {
+                j = length(buf) + 2
+                buf(j-1) = BLANK
+                }
+                                        #pick up file substitutions
+         if (inf(node,buf(j)) != ERR)
+                {
+                j = length(buf) + 2
+                buf(j-1) = BLANK
+                }
+         if (outf(node, buf(j)) != ERR)
+                {
+                j = length(buf) + 2
+                buf(j-1) = BLANK
+                }
+         if (errf(node,buf(j)) != ERR)
+                {
+                j = length(buf) + 2
+                buf(j-1) = BLANK
+                }
+         buf(j) = EOS
+        }
+ 
+ 
+ if (prcom == YES & equal(comand, xoff) == NO)	# user wishes to see command
+        call dspcom(comand, buf)
+ if (exec == YES)                       #execute command
+        {
+        if (type == SHELL)              #execute shell commands
+                call shellc(comand, buf)
+        else if (spawn (comand, buf, desc, WAIT) == ERR & type != ERR)
+                call remark ('cannot spawn process.')
+        }
+ return
+ end
+#-t-  docom                      2056  local   01/06/81  16:58:58
+#-h-  dopar                      1746  local   01/06/81  16:59:00
+ ## dopar - handle parenthesized statement
+ integer function dopar (p1,p2)
+ character tok, gtokn
+ integer p, p1, p2, l, pnode, node
+ integer setree, mktree, gibptr, gpnode
+
+ l = 0
+ for (p=p1; p<p2; p=p+1)        #find RPAREN
+        {
+        if (gtokn(p) == LPAREN)
+                l = l + 1
+        else if (gtokn(p) == RPAREN)
+                {
+                l = l - 1
+                if (l == 0)
+                        break
+                }
+        }
+ if (mktree(gpnode(p1), PAR, 7, node) == ERR)
+        {
+        dopar = ERR
+        return
+        }
+ call setokn (TMARK, p1+1, SSYN1)
+ call setokn (NODEPTR, p1+1, node)
+ call setokn (ESCAN, p1+1, p)
+ call putbac (p1+1)
+
+ for (p=p+1; p<p2; p=p+1)       #gather redirected IO arguments
+        {
+        if (gtokn(p) == LESS)
+                {
+                if (setree(node, REDIN, gibptr(p)) == ERR)
+                        {
+                        dopar = ERR
+                        return
+                        }
+                }
+        else if (gtokn(p) == GREATER)
+                {
+                if (setree(node, REDOUT, gibptr(p)) == ERR)
+                                {
+                                dopar = ERR
+                                return
+                                }
+                }
+        else if (gtokn(p) == QMARK)
+                {
+                if (setree(node, REDERR, gibptr(p)) == ERR)
+                        {
+                        dopar = ERR
+                        return
+                        }
+                }
+        else
+                {
+                call stxerr ('dopar--invalid token following parenthesis.')
+                dopar = ERR
+                return
+                }
+        }
+ dopar = OK
+ return
+ end
+#-t-  dopar                      1746  local   01/06/81  16:59:00
+#-h-  doparn                     1881  local   01/06/81  16:59:01
+ ## doparn - process parentheses node of parse tree
+ subroutine doparn (node, dir)
+ integer node, dir
+ include cpars    
+ include stdsub    
+
+ if (dir == LCHILD)
+        {
+        if (tree(node+REDIN) != 0)      #input substitution
+                {
+                if (in == 0 |
+                    (in != 0 & cin(in) > 0) )
+                        {
+                        in = in + 1
+                        cin(in) = tree(node+REDIN)
+                                #flag substitution by setting to negative
+                        tree(node+REDIN) = -tree(node+REDIN)
+                        }
+                }
+        if (tree(node+REDOUT) != 0)
+                {
+                if (out == 0 |                  #output substitution
+                    (out != 0 & cout(out) > 0))
+                        {
+                        out = out + 1
+                        cout(out) = tree(node+REDOUT)
+                                                #flag substitution
+                        tree(node+REDOUT) = -tree(node+REDOUT)
+                        }
+                }
+        if (tree(node+REDERR) != 0)
+                {
+                er   = er   + 1
+                cerr(er  ) = tree(node+REDERR)
+                                                #flag substitution
+                tree(node+REDERR) = -tree(node+REDERR)
+                }
+        }
+ else
+        {
+        if (tree(node+REDIN) < 0)
+                {
+                in = in - 1
+                tree(node+REDIN) = abs(tree(node+REDIN))
+                }
+        if (tree(node+REDOUT) < 0)
+                {
+                out = out - 1
+                tree(node+REDOUT) = abs(tree(node+REDOUT))
+                }
+        if (tree(node+REDERR) < 0)
+                {
+                er   = er   - 1
+                tree(node+REDERR) = abs(tree(node+REDERR))
+                }
+        }
+
+ return
+ end
+#-t-  doparn                     1881  local   01/06/81  16:59:01
+#-h-  dopipe                      477  local   01/06/81  16:59:01
+ ## dopipe - process pipe node of parse tree
+ subroutine dopipe (node, dir)
+ integer node, dir
+ include stdsub    
+
+ if (dir == LCHILD)
+        {
+        pctr = pctr + 1
+        pfiles(1,pctr) = EOS
+        out = out + 1
+        cout(out) = -pctr
+        aout(out) = 0
+        }
+ else if (dir == RCHILD)
+        {
+        in = in + 1
+        cin(in) = cout(out)
+        out = out - 1
+        }
+ else
+        {
+        pctr = pctr - 1
+        in = in - 1
+        }
+ return
+ end
+#-t-  dopipe                      477  local   01/06/81  16:59:01
+#-h-  dosemi                      345  local   01/06/81  16:59:01
+ ## dosemi - process semicolon node of parse tree
+ subroutine dosemi (node, dir)
+ integer node, dir
+ include stdsub    
+
+ if (dir == RCHILD)
+        {
+        if (out > 0)
+                aout(out) = aout(out) + 1
+        }
+ else if (dir == PARENT)
+        {
+        if (out > 0)
+                aout(out) = aout(out) - 1
+        }
+ return
+ end
+#-t-  dosemi                      345  local   01/06/81  16:59:01
+#-h-  doverb                     1889  local   01/06/81  16:59:02
+ ## doverb - handle final command syntax
+ integer function doverb (p1,p2)
+ character tok, gtokn
+ integer p, p1, p2, p3, i, node
+ integer mktree, setree, gibptr, gpnode
+
+ tok = gtokn(p1)                #check token
+ if (tok == LESS | tok == GREATER | tok == QMARK)
+        {
+        call stxerr ('doverb--command must preceed redirected IO.')
+        doverb = ERR
+        return
+        }
+ nargs = p2 - p1 -1
+ if (mktree(gpnode(p1), COM, 9+nargs, node) == ERR)     #make tree entry
+        {
+        doverb = ERR
+        return
+        }
+ i = 0                          #enter pointers
+ for (p=p1; p<p2; p=p+1)
+        {
+        tok = gtokn(p)
+        if (tok == LESS)
+                {
+                if (setree(node, REDIN, gibptr(p)) == ERR)
+                        {
+                        doverb = ERR
+                        return
+                        }
+                nargs = nargs - 1
+                }
+        else if (tok == GREATER)
+                {
+                if (setree(node, REDOUT, gibptr(p)) == ERR)
+                        {
+                        doverb = ERR
+                        return
+                        }
+                nargs = nargs - 1
+                }
+        else if (tok == QMARK)
+                {
+                if (setree(node, REDERR, gibptr(p)) == ERR)
+                        {
+                        doverb = ERR
+                        return
+                        }
+                nargs = nargs - 1
+                }
+        else
+                {
+                if (setree(node, CMD+i, gibptr(p)) == ERR)
+                        {
+                        doverb = ERR
+                        return
+                        }
+                i = i + 1
+                }
+        }
+ if (setree(node, NENT, nargs) == ERR)          #set nbr args
+        {
+        doverb = ERR
+        return
+        }
+ doverb = OK
+ return
+ end
+#-t-  doverb                     1889  local   01/06/81  16:59:02
+#-h-  dspcom                      336  local   01/06/81  16:59:02
+ subroutine dspcom(com, arg)
+
+ integer i
+ integer equal
+ character com(ARB), arg(ARB)
+
+ string local "local"
+
+ call putlin(com, STDOUT)
+ i = 1
+ if (equal(com, local) == NO)
+    while (arg(i) != BLANK & arg(i) != EOS)
+	i = i + 1
+ else
+    call putch(BLANK, STDOUT)
+ call putlin(arg(i), STDOUT)
+ call putch(NEWLINE, STDOUT)
+
+ return
+ end
+#-t-  dspcom                      336  local   01/06/81  16:59:02
+#-h-  endsh                        82  local   01/06/81  16:59:03
+ ## endsh - terminate execution of the shell
+ subroutine endsh
+ 
+ call endr4
+ end
+#-t-  endsh                        82  local   01/06/81  16:59:03
+#-h-  errf                       1016  local   01/06/81  16:59:03
+ ## errf - pick up errout file substitution for command
+ integer function errf (node, buf)
+ integer node
+ integer pickup
+ integer junk
+ character buf(ARB)
+ include cpars    
+ include stdsub    
+ 
+
+ buf(1) = EOS
+ errf = ERR
+ if (er == 0 & pickup(buf,node,REDERR,junk) != ERR)
+        errf = OK
+ else if (er > 0 & cerr(er) > 0)        #check for parens
+        {
+        ### Er may not be properly set
+        if (aout(out) != 0)     #append
+                {
+                buf(1) = QMARK
+                i = 2
+                }
+        else
+                i = 1
+        call scopy (ibuf(cerr(er)), 1, buf, i)
+        errf = OK
+        }
+
+ else if (script == YES & error(1) != EOS)
+        {
+        if (error(2) != QMARK)
+                {
+                buf(1) = QMARK          #append on all but first
+                call scopy(error, 1, buf, 2)
+                call scopy(buf, 1, error, 1)
+                }
+        else
+                call scopy(error, 1, buf, 1)
+        errf = OK
+        }
+ 
+ return
+ end
+#-t-  errf                       1016  local   01/06/81  16:59:03
+#-h-  execut                     1031  local   01/06/81  16:59:04
+ ## execut - process shell parse tree
+ subroutine execut
+ integer node, type, dir
+ integer mvnext, dosemi, doampr, dopipe, doparn, docom
+ include stdsub    
+
+ in = 0         #initialize file substitution stacks
+ out = 0
+ er = 0
+ pctr = 0
+ hfile(1) = EOS
+ for (i=1; i<=MAXSTACK; i=i+1)
+        pfiles(1,i) = EOS
+ node = ROOT
+ while (mvnext(node, type, dir) != ROOT)        #move thru tree
+        {
+        if (type == SEPCHAR)
+                call dosemi (node, dir)
+        else if (type == AMPER)
+                call doampr (node, dir)
+        else if (type == PIPE)
+                call dopipe (node, dir)
+        else if (type == PAR)
+                call doparn (node, dir)
+        else if (type == COM)
+                call docom (node, dir)
+        else
+                call remark ('execut - invalid parse tree.')
+        }
+ for (i=1; i<=MAXSTACK; i=i+1)          #remove scratch files
+        if (pfiles(1,i) != EOS)
+                call remove(pfiles(1,i))
+ if (hfile(1) != EOS)
+        call remove (hfile)
+ return
+ end
+#-t-  execut                     1031  local   01/06/81  16:59:04
+#-h-  gescan                      147  local   01/06/81  16:59:04
+ ## gescan - get end of scan pointer for pth node
+ integer function gescan(p)
+ integer p
+ include cpars    
+
+ gescan = tkbuf(ESCAN,p)
+ return
+ end
+#-t-  gescan                      147  local   01/06/81  16:59:04
+#-h-  getcl                      1177  local   01/06/81  16:59:05
+ ## getcl - get command line for background process
+ integer function getcl(node, dir, buf)
+ integer node, junk, snode, type, dir, lastd
+ character buf(ARB)
+ integer mvnext, gtask
+ 
+ include shflag
+ 
+ snode = node
+ buf(1) = EOS
+ repeat
+        {
+        junk = mvnext(node, type, dir)
+        if (node == snode)      #back to where we started
+                break
+        k = length(buf) + 1
+        if (type == SEPCHAR & dir == RCHILD)
+                {
+                buf(k) = SEPCHAR
+                buf(k+1) = EOS
+                }
+        else if (type == AMPER)
+                {
+                if (dir == RCHILD |
+                         (dir == PARENT & lastd == LCHILD))
+                        {
+                        buf(k) = AMPER
+                        buf(k+1) = EOS
+                        }
+                lastd = dir
+                }
+        else if (type == PIPE & dir == RCHILD)
+                {
+                buf(k) = BAR
+                buf(k+1) = EOS
+                }
+        else if (type == PAR)
+                call gpar(node, dir, buf(k))
+        else if (type == COM)
+                getcl = gtask(node, buf(k))
+        }
+ 
+ return
+ end
+#-t-  getcl                      1177  local   01/06/81  16:59:05
+#-h-  getdir                      635  local   01/06/81  16:59:05
+ ## getdir - locate specified directory
+ subroutine getdir(key, type, buf)
+
+ character buf(ARB)
+ integer key, type
+ #  'type' not used yet
+ 
+ string binstr USRBIN
+ string usrstr USRDIR
+ string tmpstr TMPDIR
+ # You might want to add some more and make this a general-purpose routine
+
+
+ switch (key) {
+    case BINDIRECTORY:	call scopy (binstr, 1, buf, 1)
+    case USRDIRECTORY:	call scopy (usrstr, 1, buf, 1)
+#   case TMPDIRECTORY:	call scopy (tmpstr, 1, buf, 1)
+#   case MAILDIRECTORY: call scopy (malstr, 1, buf, 1)
+#   case MANDIRECTORY:  call scopy (manstr, 1, buf, 1)
+    default:		buf(1) = EOS
+    }
+ call fold(buf)
+
+ return
+ end
+#-t-  getdir                      635  local   01/06/81  16:59:05
+#-h-  gibptr                      145  local   01/06/81  16:59:05
+ ## gibptr - get pointer to ibuf for pth token
+ integer function gibptr (p)
+ integer p
+ include cpars    
+
+ gibptr = tkbuf(IBPTR,p)
+ return
+ end
+#-t-  gibptr                      145  local   01/06/81  16:59:05
+#-h-  gmark                       136  local   01/06/81  16:59:06
+ ## gmark - get syntax mark of pth token
+ integer function gmark (p)
+ integer p
+ include cpars    
+ gmark = tkbuf(TMARK,p)
+ return
+ end
+#-t-  gmark                       136  local   01/06/81  16:59:06
+#-h-  gpar                        885  local   01/06/81  16:59:07
+ ## gpar - get parentheses info for script file
+ subroutine gpar(node, dir, buf)
+ integer node, dir
+ character buf(ARB)
+ integer pickup, length
+ 
+ if (dir == LCHILD)
+        {
+        buf(1) = LPAREN
+        buf(2) = EOS
+        }
+ else if (dir == PARENT)
+        {
+        buf(1) = RPAREN
+        buf(2) = BLANK
+        buf(3) = ESCAPE
+        k = 3
+        if( pickup(buf(k+1), node, REDIN, junk) != ERR)
+                {
+                k = length(buf) + 2
+                buf(k-1) = BLANK
+                buf(k) = ESCAPE
+                }
+         if ( pickup(buf(k+1), node, REDOUT, junk) != ERR)
+                {
+                k = length(buf) + 2
+                buf(k-1) = BLANK
+                buf(k) = ESCAPE
+                }
+         if ( pickup(buf(k+1), node, REDERR, junk) != ERR)
+                k = length(buf) + 2
+ 
+        buf(k-1) = EOS
+        }
+ 
+ return
+ end
+#-t-  gpar                        885  local   01/06/81  16:59:07
+#-h-  gpname                      400  local   01/06/81  16:59:07
+ ## gpname - make unique pipe name for file id n
+ subroutine gpname(n, name)
+ character name(ARB)
+ integer itoc, length
+ integer i, junk, n
+ character pipef(5)
+ include stdsub
+ 
+
+ if (pfiles(1,n) == EOS)        #get name for pipe
+        {
+        pipef(1) = LETP
+        junk = itoc(n, pipef(2), 3)
+        call scratf(pipef, pfiles(1,n))
+        }
+ call scopy(pfiles(1,n), 1, name, 1)
+ return
+ end
+#-t-  gpname                      400  local   01/06/81  16:59:07
+#-h-  gpnode                      142  local   01/06/81  16:59:07
+ ## gpnode - get parent node of pth token
+ integer function gpnode (p)
+ integer p
+ include cpars    
+
+ gpnode = tkbuf(NODEPTR,p)
+ return
+ end
+#-t-  gpnode                      142  local   01/06/81  16:59:07
+#-h-  gtask                      1055  local   01/06/81  16:59:27
+ ## gtask - pick up command and arguments for background process
+ integer function gtask(node, buf)
+ integer node, junk, type
+ integer pickup, cmdtyp
+ character buf(ARB)
+
+ include shflag
+ 
+ junk = pickup(buf, node, CMD, junk)
+ k = length(buf) + 2
+ type = cmdtyp(buf, buf(k))
+ if (type == ERR & drop == NO)
+        {
+        call remark ('invalid task.')
+        gtask = ERR
+        return
+        }
+ gtask = OK
+                                #pick up arguments
+ k = length(buf) + 2
+ buf(k-1) = BLANK
+ for (i=1; pickup(buf(k), node, ARGUMENT, i) != ERR; i=i+1)
+        {
+        k = length(buf) + 2
+        buf(k-1) = BLANK
+        }
+ buf(k) = ESCAPE
+ if( pickup(buf(k+1), node, REDIN, junk) != ERR)
+        {
+        k = length(buf) + 2
+        buf(k-1) = BLANK
+        buf(k) = ESCAPE
+        }
+ if ( pickup(buf(k+1), node, REDOUT, junk) != ERR)
+        {
+        k = length(buf) + 2
+        buf(k-1) = BLANK
+        buf(k) = ESCAPE
+        }
+ if ( pickup(buf(k+1), node, REDERR, junk) != ERR)
+        k = length(buf) + 2
+ 
+ buf(k-1) = EOS
+ return
+ end
+#-t-  gtask                      1055  local   01/06/81  16:59:27
+#-h-  gtokn                       149  local   01/06/81  16:59:28
+ ## gtokn - get first character of pth token
+ character function gtokn (p)
+ integer p
+ include cpars    
+
+ gtokn = ibuf(tkbuf(IBPTR,p))
+ return
+ end
+#-t-  gtokn                       149  local   01/06/81  16:59:28
+#-h-  herdoc                      656  local   01/06/81  16:59:28
+ ## herdoc - generate 'here document' for shell
+ subroutine herdoc(char, buf)
+ 
+ character char, buf(ARB), line(MAXLINE), doc(4)
+ integer create, getlin
+ integer int
+ include stdsub
+ include shflag
+ 
+ data doc(1), doc(2), doc(3), doc(4) /LETD, LETO, LETC, EOS/
+ 
+ buf(1) = LESS
+ call scratf(doc, buf(2))
+ int = create(buf(2), WRITE)
+ if (int == ERR)
+        {
+        call remark ("can't open 'here document'.")
+        buf(1) = EOS
+        return
+        }
+ call scopy(buf, 2, hfile, 1)
+ while(getlin(line, shin) != EOF)
+        {
+        if (line(1) == char)
+                break
+        call putlin(line, int)
+        }
+ 
+ call close(int)
+ return
+ end
+#-t-  herdoc                      656  local   01/06/81  16:59:28
+#-h-  inf                         786  local   01/06/81  16:59:29
+ ## inf - pick up input substitution for command
+ integer function inf(node, buf)
+ integer node
+ integer pickup
+ character buf(ARB), char
+ include stdsub    
+ include cpars    
+
+ buf(1) = EOS
+ if (in > 0 & cin(in) < 0)      #receive input from pipe
+        {
+        buf(1) = LESS
+        call gpname (abs(cin(in)), buf(2))
+        }
+ else if (pickup(buf,node, REDIN,junk) == ERR &
+          in > 0)
+        call scopy (ibuf(cin(in)), 1, buf, 1)
+ else if (script == YES & input(1) != EOS)
+        {
+        buf(1) = LESS
+        call scopy(input, 1, buf, 2)
+        }
+
+ if (buf(1) == LESS & buf(2) == LESS)   #check for 'here document'
+        {
+        char = buf(3)
+        call herdoc (char, buf)
+        }
+ 
+ if (buf(1) != EOS)
+        inf = OK
+ else
+        inf = ERR
+ return
+ end
+#-t-  inf                         786  local   01/06/81  16:59:29
+#-h-  initsh                     3056  local   01/06/81  16:59:29
+ ## initsh - initialize shell
+ subroutine initsh
+ integer getarg, i, open, loccom, length
+ include shflag    
+ include shcmd
+ include stdsub
+ include cdefio
+ 
+ data logout(1), logout(2), logout(3), logout(4), logout(5),
+      logout(6), logout(7) /LETL, LETO, LETG, LETO, LETU,
+                            LETT, EOS/
+ data cd/LETC, LETD, EOS/
+ data home/LETH, LETO, LETM, LETE, EOS/
+ data von/LETV, LETO, LETN, EOS/
+ data voff/LETV, LETO, LETF, LETF, EOS/
+ data xon/LETX, LETO, LETN, EOS/
+ data xoff/LETX, LETO, LETF, LETF, EOS/
+ data input(1) /EOS/
+ data output(1) /EOS/
+ data error(1) /EOS/
+ data sh(1), sh(2), sh(3)/LETS, LETH, EOS/
+ 
+ # initialize push-back buffer
+ data bp /0/
+ 
+ # initialize standard input file
+ data shin /STDIN/
+ 
+ call query ("usage:  sh [-vnxc] [args].")
+ prlin = NO
+ exec = YES
+ prcom = NO
+ carg = NO
+ drop = YES
+ script = NO
+#	initialize search path
+#	search path is :~home:~usr:~bin
+ i = 1
+ spath(i) = EOS		# current working directory first
+ i = 2
+# call mailid(clin, spath(i))	# user's home director second
+# i = i + length(spath(i)) + 1
+ call getdir(USRDIRECTORY, LOCAL, spath(i))	# usr directory third
+ i = i + length(spath(i)) + 1
+ call getdir(BINDIRECTORY, LOCAL, spath(i))	# bin directory fourth
+ i = i + length(spath(i)) + 1
+ spath(i) = NEWLINE		# NEWLINE signals end of path
+ spath(i+1) = EOS
+ if (loccom(sh, spath, sh) != BINARY)
+    {
+    call remark("Cannot locate shell.")
+    call endsh
+    }
+# call enbint		# enable kil interrupt handling
+ for (i=1; getarg(i, clin, MAXLINE) != EOF; i=i+1)
+        {
+        if (i == 1 & clin(1) == MINUS)  #shell flag
+                {
+                if (clin(2) == LETV | clin(2) == BIGV)
+                        prlin = YES
+                else if (clin(2) == LETN | clin(2) == BIGN)
+                        exec = NO
+                else if (clin(2) == LETX | clin(2) == BIGX)
+                        prcom = YES
+                else if (clin(2) == LETC | clin(2) == BIGC)
+                        carg = YES
+		else if (clin(2) == LETD | clin(2) == BIGD)
+                        drop = NO         # disable drop-thru
+                call delarg(i)
+                i = i - 1
+                }
+        else if (carg == YES)
+                {
+                call arglin(clin, i)
+                break
+                }
+        else if (i == 1)
+                {
+		if (loccom(clin, spath, clin) != ASCII)
+		    call cant(clin)
+                shin = open(clin, READ)
+                if (shin == ERR)
+                        call cant(clin)
+                script = YES
+                }
+        else if (clin(1) == ESCAPE)
+                {
+                if (clin(2) == LESS)
+                        call scopy(clin, 3, input, 1)
+                else if (clin(2) == GREATER)
+                        call scopy(clin, 3, output, 1)
+                else if (clin(2) == QMARK)
+                        call scopy(clin, 3, error, 1)
+                else
+                        next
+                call delarg (i)
+                i = i - 1
+                }
+        }
+ return
+ end
+#-t-  initsh                     3056  local   01/06/81  16:59:29
+#-h-  loccom                     1072  local   01/06/81  16:59:31
+## loccom - find command according to search path
+ integer function loccom(comand, spath, path)
+
+ character comand(ARB), spath(ARB), path(ARB), temp(FILENAMESIZE)
+ integer i, n, int
+ integer length, open, gettyp
+
+ string scrext SCRIPT_EXT               # extension for shell scripts
+ string imgext IMAGE_EXT                # extension for image files
+
+#----- NOTE -----
+# Do not write into 'path' until processing is completed, thus allowing loccom
+# to be called with the same array for 'comand' and 'path' args.
+#----------------
+
+ for (i=1; spath(i) != NEWLINE; i=i+length(spath(i))+1)
+    {
+    call concat(spath(i), comand, temp)
+    n = length(temp) + 1
+    call scopy(scrext, 1, temp, n)
+    int = open(temp, READ)
+    if (int != ERR)
+	break
+    call scopy(imgext, 1, temp, n)
+    int = open(temp, READ)
+    if (int != ERR)
+	break
+    }
+ if (int != ERR)
+    {
+    loccom = gettyp (temp)
+    call close(int)
+#    call mklocl(temp, path)
+    call scopy(temp, 1, path, 1)
+    }
+ else
+    {
+    loccom = ERR
+    call scopy(comand, 1, path, 1)
+    }
+
+ return
+ end
+#-t-  loccom                     1072  local   01/06/81  16:59:31
+#-h-  mktoks                     1195  local   01/06/81  16:59:32
+ ## mktoks - create parse tables for shell parser
+ integer function mktoks (line, k)
+ 
+ integer length
+ integer i, paren
+ character line(ARB)
+ integer shtok
+ integer k, l
+ include cpars    
+ include cdefio    
+ 
+ paren = 0
+ i = 1
+ call putbak (EOS)                      #initialize buffer
+ call pbstr (line)
+ for (k=1; shtok(ibuf(i)) != EOS; k=k+1)
+        {
+        if (ibuf(i) != EOS)
+                {
+                tkbuf(IBPTR,k) = i
+                tkbuf(TMARK,k) = 0
+                tkbuf(NODEPTR,k) = 0
+                tkbuf(ESCAN,k) = 0
+                if (ibuf(i) == LPAREN)
+                        paren = paren + 1
+                else if (ibuf(i) == RPAREN)
+                        paren = paren - 1
+                l = i + length(ibuf(i)) - 1
+                if ((ibuf(i) == SQUOTE | ibuf(i) == DQUOTE) &
+                    ibuf(l) != ibuf(i))
+                        {
+                        call remark('unbalanced quotes.')
+                        mktoks = ERR
+                        return
+                        }
+                i = l + 2
+                }
+        }
+ k = k - 1
+ ibuf(i) = EOS
+ if (paren != 0)
+        mktoks = ERR
+ else
+        mktoks = OK
+ return
+ end
+#-t-  mktoks                     1195  local   01/06/81  16:59:32
+#-h-  mktree                      942  local   01/06/81  16:59:32
+ ## mktree - create child node for given parent
+ integer function mktree (pnode, type, size, cnode)
+ integer pnode, type, size, cnode, i
+ include cpars    
+
+ cnode = treend
+ treend = treend + size         #next available space
+ if (treend >TREESIZE)
+        {
+        call stxerr ('mktree - tree buffer size exceeded.')
+        cnode = ERR
+        mktree = ERR
+        return
+        }
+
+ for (i=1; i<=size; i=i+1)      #clear entries
+        tree(cnode+i) = 0
+ tree(cnode+PARENT) = pnode
+ tree(cnode+NTYPE) = type
+ if (pnode >= 0)                #install back pointer
+        {
+        if (tree(pnode+LCHILD) == 0)
+                tree(pnode+LCHILD) = cnode
+        else if (tree(pnode+RCHILD) == 0)
+                tree(pnode+RCHILD) = cnode
+        else
+                {
+                call stxerr ('mktree--too many children.')
+                mktree = ERR
+                return
+                }
+        }
+ mktree = cnode
+ return
+ end
+#-t-  mktree                      942  local   01/06/81  16:59:32
+#-h-  mvnext                      430  local   01/06/81  16:59:33
+ ## mvnext - move to next node in parse tree
+ integer function mvnext (node, type, dir)
+ integer node, dir, type
+ integer nxtbr
+ include cpars    
+
+ if (node == ROOT)              #just starting
+        {
+        mvnext = 0
+        dir = LCHILD
+        }
+ else
+        mvnext = tree(node+dir)
+ if (mvnext != ROOT)
+        {
+        type = tree(mvnext+NTYPE)
+        dir = nxtbr(mvnext, node)
+        }
+ node = mvnext
+ return
+ end
+#-t-  mvnext                      430  local   01/06/81  16:59:33
+#-h-  nextp                       230  local   01/06/81  16:59:34
+ ## nextp - get next pointer from pushdown stack
+ integer function nextp (p)
+ integer p
+ include cpars    
+
+ if (pp == 0)
+        p = EOS
+ else
+        {
+        p = stack(pp)
+        pp = pp - 1
+        }
+ nextp = p
+ return
+ end
+#-t-  nextp                       230  local   01/06/81  16:59:34
+#-h-  ngetch                      376  local   01/06/81  16:59:34
+# ngetch - get a (possibly pushed back) character
+   character function ngetch(c, fd)
+   character getch
+   character c
+   integer fd
+   # include commonblocks
+   include cdefio
+ 
+   if (bp > 0) {
+      c = buf(bp)
+      bp = bp - 1
+      }
+   else
+      {
+      c = getch(c, fd)
+      if (ratlst == YES)
+          call putch(c, ERROUT)
+      }
+   ngetch = c
+   return
+   end
+#-t-  ngetch                      376  local   01/06/81  16:59:34
+#-h-  nxtbr                       498  local   01/06/81  16:59:34
+ ## nxtbr - determine next direction for moving in parse tree
+ integer function nxtbr (node, lnode)
+ integer node, lnode
+ include cpars    
+
+ if (lnode == tree(node+PARENT))                #going down
+        {
+        if (tree(node+LCHILD) != 0)
+                nxtbr = LCHILD
+        else
+                nxtbr = PARENT
+        }
+
+ else if (lnode == tree(node+LCHILD) &          #going up
+          tree(node+RCHILD) != 0)
+                nxtbr = RCHILD
+ else
+        nxtbr = PARENT
+ return
+ end
+#-t-  nxtbr                       498  local   01/06/81  16:59:34
+#-h-  outf                       1215  local   01/06/81  16:59:35
+ ## outf - pick up output file substitution for command
+ integer function outf (node, buf)
+ integer node
+ integer pickup
+ integer junk
+ character buf(ARB)
+ include cpars    
+ include stdsub    
+ 
+
+ buf(1) = EOS
+ outf = ERR
+ if (out == 0 & pickup(buf,node,REDOUT,junk) != ERR)
+        outf = OK
+ else if (out > 0)              #check for pipes and parens
+        {
+        if (aout(out) != 0)     #append
+                {
+                buf(1) = GREATER
+                i = 2
+                }
+        else
+                i = 1
+        if (cout(out) > 0)      #use paren substitution
+                call scopy (ibuf(cout(out)), 1, buf, i)
+        else                    #pipe
+                {
+                buf(i) = GREATER
+                call gpname(abs(cout(out)), buf(i+1))
+                }
+        outf = OK
+        }
+
+ else if (script == YES & output(1) != EOS)
+        {
+        if (output(2) != GREATER)
+                {
+                buf(1) = GREATER        #append on all but first
+                call scopy(output, 1, buf, 2)
+                call scopy(buf, 1, output, 1)
+                }
+        else
+                call scopy(output, 1, buf, 1)
+        outf = OK
+        }
+ 
+ return
+ end
+#-t-  outf                       1215  local   01/06/81  16:59:35
+#-h-  param                       639  local   01/06/81  16:59:35
+ ## param - handle parameter substitution for the shell
+ integer function param(c)
+ character c, num(2), ngetch, tbuf(MAXLINE)
+ integer getarg, ctoi, i, junk
+ include shflag
+ 
+ if (c == DOLLAR)               #handle param substitution
+        {
+        num(1) = ngetch(num(1), shin)
+        num(2) = EOS
+        i = 1
+        n = ctoi(num,i)
+        if (n > 0)
+                {
+                if (getarg(n+1, tbuf, MAXLINE) != EOF)
+                        call pbstr(tbuf)
+                c = ngetch(c, shin)
+                }
+        else
+                c = num(1)
+        param = YES
+        }
+ 
+ else
+        param = NO
+ return
+ end
+#-t-  param                       639  local   01/06/81  16:59:35
+#-h-  parser                     1625  local   01/06/81  16:59:36
+ ## parser - parse shell command line
+ 
+  #      syntax : empty
+  #             | syn1
+        
+  #      syn1   : syn2
+  #             | syn2 & syntax
+  #             | syn2 ; syntax
+        
+  #      syn2   : syn3
+  #             | syn3 | syn2
+        
+  #      syn3   : (syn1) [<in] [>out] [?errout]
+  #             | tok tok* [<in] [>out] [?errout]
+
+ integer function parser (line)
+ integer p, p1, p2, mark
+ integer syntax, syn1, syn2, syn3
+ integer mktoks, nextp, gmark, gescan
+ character line(ARB)
+ include cpars    
+ include shflag    
+
+ treend = 0             #initialize tree pointer
+ pp = 0                 #initialize stack pointer
+ for (i=1; i<=TSIZE; i=i+1)     #initialize token table
+        for (j=1; j<=MAXTOK; j=j+1)
+                tkbuf(i,j) = 0
+ for (i=1; i<=TREESIZE; i=i+1)  #initialize parse tree
+        tree(i) = 0
+ for (i=1; i<=MAXLINE; i=i+1)   #initialize input buffer
+        ibuf(i) = EOS
+
+ if (mktoks(line,p2) == ERR)
+        {
+        parser = ERR
+        return
+        }
+ call setokn (TMARK, 1, SSYNTAX)          #set root syntax
+ call setokn (NODEPTR, 1, -1)
+ call setokn (ESCAN, 1, p2)
+ call putbac (1)
+
+ while (nextp(p1) != EOS)               #generate parse tree
+        {
+        mark = gmark(p1)
+        p2 = gescan(p1)
+        if (mark == SSYNTAX)
+                parser = syntax(p1, p2)
+        else if (mark == SSYN1)
+                parser = syn1(p1, p2)
+        else if (mark == SSYN2)
+                parser = syn2(p1,p2)
+        else if (mark == SSYN3)
+                parser = syn3(p1,p2)
+        if (parser == ERR)
+                return
+        }
+ 
+ parser = OK
+ return
+ end
+#-t-  parser                     1625  local   01/06/81  16:59:36
+#-h-  pastbl                      210  local   01/06/81  16:59:36
+ ## pastbl - read past blanks and tabs on input
+ subroutine pastbl (c)
+ character c
+ character ngetch
+ include shflag
+ 
+ for (c=ngetch(c, shin); c == BLANK | c == TAB; c=ngetch(c, shin))
+        ;
+ return
+ end
+#-t-  pastbl                      210  local   01/06/81  16:59:36
+#-h-  pbstr                       200  local   01/06/81  16:59:36
+# pbstr - push string back onto input
+   subroutine pbstr(in)
+   character in(ARB)
+   integer length
+   integer i
+ 
+   for (i = length(in); i > 0; i = i - 1)
+      call putbak(in(i))
+   return
+   end
+#-t-  pbstr                       200  local   01/06/81  16:59:36
+#-h-  pickup                      721  local   01/06/81  16:59:37
+ ## pickup - pick up character string from parse tree
+ integer function pickup (array, node, field, arg)
+ integer node, field, arg
+ character array(ARB)
+ include cpars    
+
+ array(1) = EOS
+ pickup = OK
+
+ if ( (field == REDIN | field == REDOUT | field == REDERR) &
+      (tree(node+NTYPE) == COM | tree(node+NTYPE) == PAR) &
+      tree(node+field) != 0 )
+                call scopy (ibuf(tree(node+field)), 1, array, 1)
+
+ else if (field == CMD & tree(node+NTYPE) == COM)
+        call scopy(ibuf(tree(node+CMD)), 1, array, 1)
+
+ else if (field == ARGUMENT & tree(node+NTYPE) == COM &
+          arg <= tree(node+NENT) )
+                call scopy (ibuf(tree(node+CMD+arg)),1,array,1)
+
+ else
+        pickup = ERR
+ return
+ end
+#-t-  pickup                      721  local   01/06/81  16:59:37
+#-h-  putbac                      224  local   01/06/81  16:59:37
+ ## putbac - put pointer on pushdown stack
+ subroutine putbac (p)
+ integer p
+ include cpars    
+
+ pp = pp + 1
+ if (pp > MAXSTACK)
+        call stxerr ('putbac--stack size exceeded.')
+ else
+        stack(pp) = p
+ return
+ end
+#-t-  putbac                      224  local   01/06/81  16:59:37
+#-h-  putbak                      248  local   01/06/81  16:59:37
+# putbak - push character back onto input
+   subroutine putbak(c)
+   character c
+   # include commonblocks
+   include cdefio
+ 
+   bp = bp + 1
+   if (bp > BUFSIZE)
+      call error("too many characters pushed back.")
+   buf(bp) = c
+   return
+   end
+#-t-  putbak                      248  local   01/06/81  16:59:37
+#-h-  pwdir                       167  local   01/06/81  16:59:38
+# subroutine pwdir(int)
+#
+# character file(FILENAMESIZE)
+# integer int
+#
+# call gwdir(file, PATH)
+# call putlin(file, int)
+# call putch(NEWLINE, int)
+#
+# return
+# end
+#-t-  pwdir                       167  local   01/06/81  16:59:38
+#-h-  qs                          584  local   01/06/81  16:59:38
+ ## qs - handle extract quoted string token in shell
+ subroutine qs(char, tok)
+ character c, tok(ARB), char
+ integer j, junk
+ integer param
+ character ngetch
+ include shflag
+ 
+ tok(1) = char
+ j = 2
+ for (c=ngetch(c,shin); c != EOS; c=ngetch(c, shin))
+        {
+#       if (c == DOLLAR & tok(j-1) == ESCAPE)   #escape dollar
+#               j = j - 1
+#       else 
+#               junk = param(c)
+        if (c == EOS)
+                break
+        tok(j) = c
+        j = j + 1
+        if (c == char)                  #done
+                break
+        }
+ 
+ tok(j) = EOS
+ return
+ end
+#-t-  qs                          584  local   01/06/81  16:59:38
+#-h-  remov                       172  local   01/06/81  16:59:38
+ ## remov - remove piped file
+ subroutine remov
+ character name(FILENAMESIZE)
+ integer desc
+ include stdsub    
+
+ call gpname (pctr, name)
+ call remove (name)
+ return
+ end
+#-t-  remov                       172  local   01/06/81  16:59:38
+#-h-  scrf                       1520  local   01/06/81  16:59:39
+ ## scrf - prepare script file for execution by shell
+ subroutine scrf (node, comand, args)
+ 
+ character comand(ARB), args(ARB)
+ integer pickup, inf, outf, errf, length
+ integer i, j, type
+ include shflag
+ include stdsub
+ 
+ string prflag "-v "
+ string cmflag "-x "
+ string drflag "-d "
+ string shstr "sh "
+ 
+ # handle scripts by spawning the shell with the script as input
+ 
+ j = 1
+ call stcopy(shstr, 1, args, j)
+ if (prlin == YES)              #pass along shell flags
+	call stcopy(prflag, 1, args, j)
+ if (prcom == YES)
+	call stcopy(cmflag, 1, args, j)
+ if (drop == NO)
+	call stcopy(drflag, 1, args, j)
+ 
+ # The shell becomes the main command and the script file name
+ # becomes an argument to the shell
+ call scopy(comand, 1, args, j)   
+ call scopy(sh, 1, comand, 1)    
+ j = length(args) + 2
+ args(j-1) = BLANK
+ 
+ for (i=1; pickup(args(j), node, ARGUMENT, i) != ERR; i=i+1) #pick up args
+        {
+        j = length(args) + 2
+        args(j-1) = BLANK
+        }
+ 
+ args(j) = ESCAPE
+ if (inf(node, args(j+1)) != ERR)       #pick up STDIN substitution
+        {
+        j = length(args) + 2
+        args(j) = ESCAPE
+        args(j-1) = BLANK
+        }
+ 
+ if (outf(node, args(j+1)) != ERR)      #pick up STDOUT substitution
+        {
+        j = length(args) + 2
+        args(j) = ESCAPE
+        args(j-1) = BLANK
+        }
+ 
+ if (errf(node, args(j+1)) != ERR)      #pick up ERROUT substitution
+        {
+        j = length(args) + 2
+        }
+ 
+ if (args(j) == BLANK)
+        j = j - 1
+ args(j) = EOS
+ 
+ return
+ end
+#-t-  scrf                       1520  local   01/06/81  16:59:39
+#-h-  setokn                      172  local   01/06/81  17:00:02
+ ## setokn - insert value in given position of pth token
+ subroutine setokn (posn, p, value)
+ integer posn, p, value
+ include cpars    
+ tkbuf(posn,p) = value
+ return
+ end
+#-t-  setokn                      172  local   01/06/81  17:00:02
+#-h-  setree                      341  local   01/06/81  17:00:03
+ ## setree - put 'value' in given node at given position
+ integer function setree (node, posn, value)
+ integer node, posn, value
+ include cpars    
+
+ i = node + posn
+ if (tree(i) != 0)
+        {
+        call stxerr ('setree--doubly defined argument.')
+        setree = ERR
+        return
+        }
+ tree(i) = value
+ setree = OK
+ return
+ end
+#-t-  setree                      341  local   01/06/81  17:00:03
+#-h-  shcom                       419  local   01/06/81  17:00:03
+ ## shcom - see if command is shell command
+ integer function shcom(comand)
+ character comand(ARB)
+ integer equal
+ 
+ include shcmd
+ 
+ if (equal(comand, logout) == YES |
+     equal(comand, cd) == YES |
+     equal(comand, home) == YES |
+     equal(comand, von) == YES |
+     equal(comand, voff) == YES |
+     equal(comand, xon) == YES |
+     equal(comand, xoff) == YES)
+    shcom = YES
+ else
+    shcom = NO
+
+ return
+ end
+#-t-  shcom                       419  local   01/06/81  17:00:03
+#-h-  shellc                      946  local   01/06/81  17:00:04
+ ## shellc - execute shell command
+ subroutine shellc (comand, args)
+ 
+ character comand(ARB), args(ARB)
+ integer equal, cwdir, i
+ include shcmd
+ include stdsub
+ include shflag
+ 
+ if (equal(comand, logout) == YES)
+        call endsh
+# else if (equal(comand, cd) == YES)
+#    {
+#    for (i=1; args(i) != BLANK & args(i) != EOS; i=i+1)
+#	;
+#    args(i) = EOS
+#    if (cwdir(args) == ERR)
+#	{
+#	call putlin(args, ERROUT)
+#	call remark(" : directory does not exist.")
+#	}
+#    else
+#	call pwdir(ERROUT)
+#    }
+# else if (equal(comand, home) == YES)
+#    {
+#    if (cwdir(spath(2)) == ERR)
+#        call remark("home command failed.")
+#    else
+#	call pwdir(ERROUT)
+#    }
+ else if (equal(comand, von) == YES)
+    prlin = YES
+ else if (equal(comand, voff) == YES)
+    prlin = NO
+ else if (equal(comand, xon) == YES)
+    prcom = YES
+ else if (equal(comand, xoff) == YES)
+    prcom = NO
+ else
+        call remark ('invalid shell command.')
+ return
+ end
+#-t-  shellc                      946  local   01/06/81  17:00:04
+#-h-  shline                     1490  local   01/06/81  17:00:04
+ ## shline - prompt and get input line for shell
+ integer function shline (line)
+ 
+ character line(ARB)
+ character clower
+ integer length, prompt, equal
+ character pchar(3, 2), tmpara(5)
+ integer pptr, i, k
+ include shflag
+ include shcmd
+ data pchar/PERCENT, BLANK, EOS, PERCENT, UNDERLINE, EOS/
+ 
+ if (carg == YES)                       #get input from command line
+        {
+        if (clin(1) == EOF)             #done
+                {
+                shline = EOF
+                return
+                }
+        call scopy(clin, 1, line, 1)
+        clin(1) = EOF
+        }
+ else
+        {
+	pptr = 1		# first prompt is bare %
+        k = 1
+        repeat                                  #pick up entire buffer
+                {
+		if (prompt(pchar(1,pptr), line(k), shin) == EOF)
+                        {
+                        shline = EOF
+                        return
+                        }
+                k = length(line)
+                if (line(k) == NEWLINE & 
+                    line(k-1) != ESCAPE)        #end of line
+                        break
+                k = k - 1                       #get more input
+		pptr = 2		# continuation prompt is %_
+                }
+        }
+ 
+ shline = k
+ for (i=1; i <= 4 & i <= k; i=i+1)
+    tmpara(i) = clower(line(i))
+ tmpara(i) = EOS
+ if (prlin == YES & equal(tmpara, voff) == NO)	#user wishes to see line
+        call putlin(line, STDOUT)
+ 
+                                                #save statistics
+ 
+ return
+ end
+#-t-  shline                     1490  local   01/06/81  17:00:04
+#-h-  shtok                      2065  local   01/06/81  17:00:05
+ ## shtok - extract next shell token
+ integer function shtok (tok)
+ 
+ character tok(ARB), c, ngetch
+ integer spec, param, atbeg
+ integer i, j, pstat
+ include shflag
+ 
+ repeat                         #loop until non-null token found
+        {
+        call pastbl(c)          #skip leading blanks & tabs
+        j = 1
+        if (spec(c) == YES)     #single shell special character
+                {
+                tok(1) = c
+                tok(2) = EOS
+                shtok = c 
+                return
+                }
+        if (c == SQUOTE | c == DQUOTE)  #quoted string
+                {
+                call qs(c, tok)
+                shtok = tok(1)
+                return
+                }
+        if (c == LESS | c == GREATER | c == QMARK)      #redirected IO
+                for (i=1; i<=2; i=i+1)
+                        {
+                        tok(j) = c
+                        j = j + 1
+                        call pastbl(c)
+                        if (c != tok(j-1))
+                                break
+                        }
+ 
+        for ( ; c != EOS; n=ngetch(c, shin))
+                {
+                pstat = param(c)
+                if (c == EOS)
+                        break
+                if (atbeg(c) == YES)
+                        {
+                        call putbak(c)
+                        break
+                        }
+                if (c == ESCAPE)
+                        {
+                        c = ngetch(c, shin)
+                        if (spec(c) == NO &     #ignore if not shell char.
+                            (c != ESCAPE & c != DOLLAR))
+                                {
+                                call putbak(c)
+                                c = ESCAPE
+                                }
+                        }
+                tok(j) = c
+                j = j + 1
+                }
+        tok(j) = EOS
+        shtok = tok(1)
+        if (pstat == NO | j < 1)
+                return
+        #continue if null token produced by empty parameter substitution
+        pstat = NO
+        }
+ 
+ end
+#-t-  shtok                      2065  local   01/06/81  17:00:05
+#-h-  spec                        440  local   01/06/81  17:00:06
+ ## spec - handle special characters in shell commands
+ integer function spec (c)
+ 
+ character c
+ character sp(8)
+ data sp(1), sp(2), sp(3), sp(4), sp(5), sp(6),
+      sp(7), sp(8) /AMPER, LPAREN, RPAREN, SEPCHAR, BAR,
+                    CARET, NEWLINE, EOS/
+ 
+ if (index(sp, c) != 0)
+        {
+        spec = YES
+        if (c == CARET)         #allow CARET for PIPE
+                c = BAR
+        }
+ else
+        spec = NO
+ return
+ end
+#-t-  spec                        440  local   01/06/81  17:00:06
+#-h-  stxerr                      216  local   01/06/81  17:00:06
+ ## stxerr - report syntax error
+ subroutine stxerr (reason)
+ character reason(ARB)
+ include cpars    
+
+ call putlin('syntax error: ', ERROUT)
+ call putlin (reason, ERROUT)
+ call putch (NEWLINE, ERROUT)
+ return
+ end
+#-t-  stxerr                      216  local   01/06/81  17:00:06
+#-h-  syn1                       1584  local   01/06/81  17:00:06
+ ## syn1 - parse shell syntax level 1
+ #  SYN1 -> SYN2
+ #       -> SYN2 ; SYNTAX
+ #       -> SYN2 & SYNTAX
+
+ integer function syn1 (p1,p2)
+ character tok, gtokn
+ integer p, p1, p2, node, l
+ integer gpnode, gescan, mktree
+
+ l = 0
+ for (p=p1; p<p2; p=p+1)
+        {
+        tok = gtokn(p)
+        if (tok == LPAREN)
+                l = l + 1
+        else if (tok == RPAREN)
+                l = l - 1
+        if (l < 0)
+                call stxerr ('syn1--unbalanced right parentheses.')
+        else if (tok == AMPER | tok == SEPCHAR)
+                if (l == 0)
+                        {               #list found
+                        if (mktree(gpnode(p1), tok, 4, node) == ERR)
+                                {
+                                syn1 = ERR
+                                return
+                                }
+                        call setokn (TMARK, p+1, SSYNTAX) #right-hand token
+                        call setokn (NODEPTR, p+1, node)
+                        call setokn (ESCAN, p+1, gescan(p1))
+                        call putbac(p+1)
+                        call setokn (TMARK, p1, SSYN2)    #left-hand token
+                        call setokn (NODEPTR, p1, node)
+                        call setokn (ESCAN, p1, p)
+                        call putbac (p1)
+                        syn1 = OK
+                        return
+                        }
+                }
+ if (l > 0)
+        call stxerr ('syn1--unbalanced left parentheses.')
+ else
+        {
+        call setokn (TMARK, p1, SSYN2)
+        call putbac (p1)
+        }
+ syn1 = OK
+ return
+ end
+#-t-  syn1                       1584  local   01/06/81  17:00:06
+#-h-  syn2                       1362  local   01/06/81  17:00:07
+ ## syn2 - parse shell syntax level 2
+ #  SYN2 -> SYN3
+ #       -> SYN3 | SYN2
+
+ integer function syn2 (p1,p2)
+ character tok, gtokn
+ integer p, p1, p2, l, node
+ integer gpnode, gescan, mktree
+
+ l = 0
+ for (p=p1; p<p2; p=p+1)
+        {
+        tok = gtokn(p)
+        if (tok == LPAREN)
+                l = l + 1
+        else if (tok == RPAREN)
+                l = l - 1
+        else if (tok == BAR)
+                if (l == 0)
+                        {               #pipe found
+                        if (mktree(gpnode(p1), PIPE, 4, node) == ERR)
+                                {
+                                syn2 = ERR
+                                return
+                                }
+                        call setokn(TMARK, p+1, SSYN2)    #right-hand token
+                        call setokn(NODEPTR, p+1, node)
+                        call setokn (ESCAN, p+1, gescan(p1))
+                        call putbac(p+1)
+                        call setokn(TMARK, p1, SSYN3)     #left-hand token
+                        call setokn(NODEPTR, p1, node)
+                        call setokn(ESCAN, p1, p)
+                        call putbac (p1)
+                        syn2 = OK
+                        return
+                        }
+                }
+ call setokn (TMARK, p1, SSYN3)           #no pipe found
+ call putbac (p1)
+ syn2 = OK
+ return
+ end
+#-t-  syn2                       1362  local   01/06/81  17:00:07
+#-h-  syn3                        431  local   01/06/81  17:00:07
+ ## syn3 - parse shell syntax level 3
+ #  SYN3 -> (SYN1) [<in] [>out] [?errout]
+ #       -> word word* [<in] [>out] [?errout]
+ integer function syn3 (p1,p2)
+ character gtokn
+ integer  p1, p2
+ integer dopar, doverb
+
+ if (p1 >= p2)
+        {
+        call stxerr ('syn3--empty command.')
+        syn3 = ERR
+        return
+        }
+ if (gtokn(p1) == LPAREN)
+        syn3 = dopar(p1,p2)
+ else
+        syn3 = doverb(p1,p2)
+ return
+ end
+#-t-  syn3                        431  local   01/06/81  17:00:07
+#-h-  syntax                      573  local   01/06/81  17:00:08
+ ## syntax - parse shell syntax level zero
+ #    SYNTAX -> EMPTY
+ #           -> SYN1
+ integer function syntax (p1,p2)
+ integer p, p1, p2
+ character tok, gtokn
+
+ for (p=p1; p<p2; p=p+1)
+        {
+        tok = gtokn(p)
+        if (tok == SEPCHAR | tok == AMPER | tok == NEWLINE)
+                next
+        break
+        }
+
+ if (p < p2)                    #update (new) token
+        {
+        call setokn (TMARK, p, SSYN1)
+        call setokn (NODEPTR, p, gpnode(p1))
+        call setokn (ESCAN, p, gescan(p1))
+        call putbac (p)
+        }
+ syntax = OK
+ return
+ end
+#-t-  syntax                      573  local   01/06/81  17:00:08
+#-t-  sh.r                      54723  local   01/06/81  17:04:59

@@ -1,0 +1,1932 @@
+#-h-  format.doc                 8461  ascii   07Jan84  11:42:06
+.bp 1
+.in 0
+.he 'FORMAT (1)'22Dec83'FORMAT (1)'
+.fo ''-#-''
+.sp 2
+.in +3
+.fi
+.ti -3
+NAME
+.br
+format (roff) - format text
+.nf
+.sp
+.ti -3
+SYNOPSIS
+.br
+format [+n] [-n] [-s] [-pon] [files...]
+.fi
+.sp
+.ti -3
+DESCRIPTION
+.br
+Format
+formats text according to
+request lines
+embedded in the text of
+the given
+files or standard input if no files are given.
+If nonexistent filenames are encountered they are
+ignored.  The optional flags are as follows:
+.in +5
+.sp
+.ti -5
++n   Start printing at the first page with number "n".
+.sp
+.ti -5
+-n   Stop printing at the first page numbered higher than "n".
+.sp
+.ti -5
+-s   Stop before each page, including the first (useful for
+paper manipulation).
+The prompt "Type return to begin a page" is
+given just once before the first page.
+.sp
+.ti -5
+-pon Move the entire document "n" spaces (default=0) to the right
+("page offset").
+.sp
+.in -5
+Input consists of intermixed text lines,
+which contain information to be
+formatted, and request lines, which contain
+instructions about how to format
+the text lines.
+Request lines begin with a distinguishing "control character", normally
+a period.
+.sp
+Output lines are automatically "filled"; that is, their
+right margins are justified, without regard to the format of
+the input text lines.
+(Right justification may be turned on and off through
+the use of the ".ju" and ".nj" commands, though.)
+Strings of embedded spaces are retained so that the
+output line will contain at least as many spaces between words
+as the input line.
+However, input lines beginning with a space are output without
+modification.
+
+Line "breaks" may be caused at specified places by certain commands,
+or by the
+appearance of an empty input line or an input line
+beginning with a space.
+.sp
+Because of the nature of its output (backspace and tab characters
+and a fixed number of lines per page), it is generally necessary
+to have a tool developed especially for printing the output
+on the local printers.
+On most systems this is a combination of the tools 'os' and
+'detab', plus some sort of page eject control of the printer.
+If such as tool exists, it should be described in Section 3 of
+this manual.
+.sp
+The capabilities of format are specified in the attached
+Request Summary.
+Numerical values are denoted by "n", titles by "t", and single
+characters by "c".
+Numbers may be signed + or -, in which case they signify
+relative changes to a quantity; otherwise they signify an absolute
+setting.
+Missing "n" fields are ordinarily taken to be 1,
+missing "t" fields to be
+empty, and "c" fields to shut off the
+appropriate special interpretation.
+.sp
+Running titles may appear at the top and bottom of every page.
+A title line consists of a line with three distinct fields:
+the first is text to be placed flush with the left margin, the
+second centered, and the third flush with the right margin.
+The first non-blank character in the title will be used as the
+delimiter to separate the three fields.
+Any "#" characters in a title  are replaced by the
+current page number, and
+any "%" characters are replaced by the current date.
+.sp
+Tabs in the input are expanded according to the tab stops set with
+the ".ta" command. There are 3 possible justifications of text on a
+tab stop: left, centered, and right. Left justification is the default,
+centered and right justification are indicated by a 'c' or 'r'
+immediately following the tab position. For example, the input
+.sp
+.in +3
+.nf
+   .nf
+   .ta 8 16r 24c
+   ABC<tab>DEF<tab>GHI<tab>JKL
+.in -3
+.sp
+.fi
+(where <tab> indicates a tab character) would result in 'ABC'
+starting in column 1, 'DEF' left justified against column 8,
+'GHI' right justified against column 16, and 'JKL' centered around
+column 24. (The format tabs were copied directly from nroff tabs -
+for more info, see the UNIX nroff manual).
+.sp
+The ".nr" defines number registers; there are 26 registers named a-z.
+The command ".nr x m" sets number register x to m; ".nr x +m"
+increments number register by m; and ".nr x -m" decrements x by m.
+The value of number register x is placed in the text by the
+appearance of @nx; a literal @ may be inserted using @@.
+.sp
+Additional commands may be defined using ".sp
+.fi
+.in -4
+example,
+.sp
+.in +3
+.nf
+.cc +
+.sp
+.fi
+.in -4
+.sp
+.ti +3
+.en
++cc .
+.in -3
+.sp
+.fi
+defines a "paragraph" command PG.
+Defined commands may also be invoked with arguments.
+Arguments are separated by blanks or tabs.
+Within the
+definition of a defined command, arguments are referenced using
+$1, $2, etc.  There is a maximum of 9 arguments.
+Omitted arguments default to the null string.
+$0 references
+the command name itself.
+For example, the following version of the paragraph command
+uses the argument to determine the amount of indentation.
+.sp
+.in +3
+.nf
+.cc +
+.sp
+.fi
+.in -4
+.sp
+.ti +$1
+.en
++cc .
+.in -3
+.sp
+.fi
+This command could be invoked by
+.sp
+.in +3
+.nf
+.cc +
+.PG 3
++cc .
+.in -3
+.sp
+.fi
+to get the same effect as the previous version.
+.sp
+The ".so file" command causes the contents of file to be
+inserted in place of the ".so" command; ".so" commands may be
+nested.
+.sp
+.ti -3
+FILES
+.br
+None
+.sp
+.ti -3
+SEE ALSO
+.br
+Kernighan & Plauger's "Software Tools", pages 219-250
+.br
+whatever tool has been devised for printing formatted output
+.br
+The roff and nroff/troff UNIX commands
+.br
+The "nroff" and "troff" users manuals by Joseph F. Ossana,
+Bell Laboratories, Murray Hill, New Jersey
+.sp
+.ti -3
+DIAGNOSTICS
+.br
+.in +3
+.ti -3
+invalid number register name
+.br
+names of number registers must be a single letter a-z
+
+.ti -3
+missing name in command definition
+.br
+a macro was defined using the '.sp
+.fi
+.in -4
+name for it was given
+
+.ti -3
+so commands nested too deeply
+.br
+the limit for nesting included source files is dependent upon
+the MAXOFILES definition in the standard symbols definition file
+
+.ti -3
+too many characters pushed back
+.br
+the buffer holding input characters has been exceeded; its size
+is determined by the BUFSIZE definition in the source code
+.in -3
+.sp
+.ti -3
+AUTHORS
+.br
+Original version by Kernighan and Plauger, with modifications by
+David Hanson and friends (U. of Arizona), Joe Sventek, Van Jacobson,
+and Debbie Scherrer (Lawrence Berkeley Laboratory)
+.nf
+.ne 38
+.in 0
+.ce
+.sp
+REQUEST SUMMARY
+.sp
+Request Initial Default Break Meaning
+.sp
+.cc +
+.bd n           n=1     no    boldface the next n lines
+.bp n     n=1   n=+1    yes   begin new page and number it n
+.br                     yes   break
+.cc c     c=.   c=.     no    control character becomes c
+.ce n           n=1     yes   center the next n input lines
+.cu n           n=1     no    continuously underline next n
++ti +30
+input lines
+.sp
+.fi
+.in -4
+ ends at .en
+.ef t     t=""  t=""    no    foots on even pages are t
+.eh t     t=""  t=""    no    heads on even pages are t
+.en                     no    terminate command definition
+.fi       yes           yes   begin filling output lines
+.fo /l/c/r f="" f=""    no    foot titles are l(eft), c(enter), r(ight)
+.he /l/c/r t="" t=""    no    head title is l(eft), c(enter), r(ight)
+.in n     n=0   n=0     yes   set left margin to column n+1
+.ju       yes   yes     no    begin justifying filled lines
+.ls n     n=1   n=1     no    set line spacing to n
+.m1 n     n=3   n=3     no    space between top of page and head
+.m2 n     n=2   n=2     no    space between head and text
+.m3 n     n=2   n=2     no    space between text and foot
+.m4 n     n=3   n=3     no    space between foot and bottom
+.ne n           n=0     y/n   need n lines; break if new page
+.nf       no            yes   stop filling
+.nj       no            no    stop justifying
+.nr x m   x=0   m=0     no    set number register x to m,
++ti +30
+-m, +m for decrement, increment
+.of t     t=""  t=""    no    foots on odd pages are t
+.oh t     t=""  t=""    no    heads on odd pages are t
+.pl n     n=66  n=66    no    set page length to n lines
+.po n     n=0   n=0     no    set page offset to n spaces
+.rm n     n=65  n=65    no    set right margin to column n
+.so file                no    switch input to file
+.sp n           n=1     yes   space n lines, except at top of page
+.st n           n=0     yes   space to line n from top; -n
+.ta p     no    no      no    define tabs stops at position(s) 'p'
++ti +30
+spaces to line n from bottom
+.ti n           n=0     yes   temporarily indent next output
++ti +30
+line n spaces
+.ul n           n=1     no    underline words in the next n
++ti +30
+input lines
++cc .
+#-t-  format.doc                 7939  local   12/10/80  15:53:22
+
+#-t-  format.doc                 8461  ascii   07Jan84  11:42:06
+#-h-  format.inc                 5587  ascii   07Jan84  11:42:07
+#-h-  cparam                     1316  ascii   07Jan84  11:38:48
+ ## common block holding misc. line info for format tool
+ #  put on a file called "cparam"
+ #  (used ony by format tool)
+
+ common /cparam/ fill, lsval, inval, rmval, tival, ceval, ulval,
+                 boval, cchar, tjust(3), bsval, rjust, cuval,
+                 tabchar, tabpos(MAXTABS), tabjust(MAXTABS)
+   integer fill      # fill if YES; init = YES
+   integer lsval   # current line spacing; init = 1
+   integer inval   # current indent; >= 0; init = 0
+   integer rmval   # current right margin; init = PAGEWIDTH = 60
+   integer tival   # current temporary indent; init = 0
+   integer ceval   # number of lines to center; init = 0
+   integer ulval   # number of lines to underline; init = 0
+   integer boval   # number of lines to boldface; init = 0
+   character cchar   # line control character; init = PERIOD
+   integer tjust   # justification types for heads and foots;
+                   # init = LEFT, CENTER, RIGHT
+   integer bsval   # number of lines to blank suppress; init=0
+   integer rjust   # right justify filled lines if YES; init=YES
+   integer cuval   # number lines to continuously underline; init = 0
+   character tabchar
+   integer tabpos
+   integer tabjust
+#-t-  cparam                     1316  ascii   07Jan84  11:38:48
+#-h-  cpage                      1874  ascii   07Jan84  11:38:49
+ ## common block holding misc. page info for format tool
+ #  put on a file called "cpage"
+ #   (used only by format tool)
+
+ common /cpage/ curpag,newpag,lineno,plval,m1val,m2val,m3val,m4val,
+    bottom, ehead(MAXLINE), ohead(MAXLINE), ehlim(2), ohlim(2),
+    efoot(MAXLINE), ofoot(MAXLINE), eflim(2), oflim(2), stopx,
+    frstpg, lastpg, print, offset
+    integer curpag   # current output page number; init = 0
+    integer newpag   # next output page number; init = 1
+    integer lineno   # next line to be printed; init = 0
+    integer plval   # page length in lines; init = PAGELEN = 66
+    integer m1val   # margin before and including header
+    integer m2val   # margin after header
+    integer m3val   # margin after last text line
+    integer m4val   # bottom margin, including footer
+    integer bottom   # last live line on page, = plval-m3val-m4val
+    character ehead   # top of page title for even pages;init=NEWLINE
+    character ohead   # top of page title for odd  pages;init=NEWLINE
+    integer ehlim   # left,right margins for even header;init=inval,rmval
+    integer ohlim   # left,right margins for odd  header;init=inval,rmval
+    character efoot   # bot of page title for even pages;init=NEWLINE
+    character ofoot   # bot of page title for odd  pages;init=NEWLINE
+    integer eflim   # left,right margins for even footer;init=inval,rmval
+    integer oflim   # left,right margins for odd  footer;init=inval,rmval
+    integer stopx     # flag for pausing between pages
+    integer frstpg    # first page to begin printing with
+    integer lastpg    # last page to be printed
+    integer print       # flag to indicate whether page should be printed
+    integer offset      # number of blanks to offset page by; init = 0
+#-t-  cpage                      1874  ascii   07Jan84  11:38:49
+#-h-  cout                        600  ascii   07Jan84  11:38:49
+ ## common block holding output lines and info for format tool
+ #  put on a file called "cout"
+ #  used only by the format tool
+
+ common /cout/ outp, outw, outwds, outbuf(MAXOUT)
+   integer outp      # last char position in outbuf; init = 0
+   integer outw      # width of text currently in outbuf; init = 0
+   integer outwds    # number of words in outbuf; init = 0
+   character outbuf  # lines to be filled collect here
+                     # word in outbuf; init=0
+#-t-  cout                        600  ascii   07Jan84  11:38:49
+#-h-  cfiles                      375  ascii   07Jan84  11:38:49
+ ## common block used to hold list of input files
+ #  put on a file called 'cfiles'
+ #  used by macro, roff
+
+ common /cfiles/ infile(NFILES), level
+   integer infile # stack of file descriptors
+   integer level # current file is infile(level)
+#-t-  cfiles                      375  ascii   07Jan84  11:38:49
+#-h-  cnr                         314  ascii   07Jan84  11:38:50
+ ## common block holding number registers for format tool
+ #  put on a file called "cnr"
+ #  used only by the format tool
+
+ common /cnr/ nr(26)
+   integer nr # number registers a..z
+#-t-  cnr                         314  ascii   07Jan84  11:38:50
+#-h-  cmac                        313  ascii   07Jan84  11:38:50
+ # common block to hold symbol table for macros
+ # put on a file called 'cmac'
+
+ common /cmac/ mactbl
+   pointer mactbl    # symbol table containing macros
+
+ DS_DECL (mem, MEMSIZE)
+#-t-  cmac                        313  ascii   07Jan84  11:38:50
+#-h-  cdefio                      387  ascii   07Jan84  11:38:51
+ ## common block to hold pushed-back input characters
+ #  put on a file called 'cdefio'
+ #  used by ratfor, macro, roff
+
+ common /cdefio/ bp, buf(BUFSIZE)
+   integer bp      # next available character; init = 0
+   character buf   # pushed-back characters
+#-t-  cdefio                      387  ascii   07Jan84  11:38:51
+#-h-  ctemp                       424  ascii   07Jan84  11:38:51
+ ## common block holding temporary buffers for format tool
+ #  put on a file called "ctemp"
+ #  (used only by format tool)
+
+ common /ctemp/ tbuf1(MAXLINE), tbuf2(MAXLINE), ttl(MAXLINE)
+  character tbuf1   # scratch arrays for use by puttl and tabs
+  character tbuf2   #
+  character ttl     #
+#-t-  ctemp                       424  ascii   07Jan84  11:38:51
+#-t-  format.inc                 5587  ascii   07Jan84  11:42:07
+#-h-  format                    35174  ascii   07Jan84  11:42:09
+### format.r
+### defns
+# format - text formatter
+
+
+
+ #     define the following if you want format to output a
+ #     page eject character (CNTRL-L) rather than count lines
+ #     to finish off a page
+ #               define(PAGECONTROL,)
+
+ define(ARGFLAG,'$')
+ define(INSIZE,400)
+ define(MAXOUT,400)
+ define(MAXDEF,200)
+ define(MAXTABS,12)
+ define(NFILES,arith(MAXOFILES,-,4))
+ define(PAGENUM,'#')
+ define(CURRENTDATE,'%')
+ define(PAGEJECT,FF)          # FF is ASCII formfeed (control-L)
+ define(PAGEWIDTH,65)
+ define(PAGELEN,66)
+ define(BUFSIZE,400)     # push back buffer
+ define(UNKNOWN,0)
+ define(DEFINED,-1)
+ define(LEFT,1)
+ define(CENTER,2)
+ define(RIGHT,3)
+ define(STARTU,-10)      # start underscoring
+ define(STOPU,-11)       # stop underscoring
+ define(FI,1)
+ define(NF,2)
+ define(BR,3)
+ define(LS,4)
+ define(BP,5)
+ define(SP,6)
+ define(IN,7)
+ define(RM,8)
+ define(TI,9)
+ define(CE,10)
+ define(UL,11)
+ define(HE,12)
+ define(FO,13)
+ define(PL,14)
+ define(PO,15)
+ define(BD,16)
+ define(M1,17)
+ define(M2,18)
+ define(M3,19)
+ define(M4,20)
+ define(EH,21)
+ define(OH,22)
+ define(EF,23)
+ define(OF,24)
+ define(CC,25)
+ define(NE,26)
+ define(BS,27)
+ define(JU,28)
+ define(NJ,29)
+ define(SO,30)
+ define(CU,31)
+ define(DE,32)
+ define(EN,33)
+ define(NR,34)
+ define(ST,35)
+ define(TA,36)
+
+ define(MEMSIZE,5000)      # space for macro names and text
+
+
+
+ DRIVER(format)
+   character arg(MAXLINE)
+   integer getarg, open, ctoi
+   integer i, fd, nf, j
+   include "cpage"
+   include "cparam"
+   include "cout"
+
+   call finit
+   nf = 0
+   call query ("usage: format [-s] [+n] [-n] [-pon] [files].")
+   for (i = 1; getarg(i, arg, MAXLINE) != EOF; i = i + 1)
+      if (arg(1) == '-' & (arg(2) == 's' | arg(2) == 'S'))
+         stopx = 1
+      else if (arg(1) == '-' & (arg(2) == 'p' | arg(2) == 'P') &
+         (arg(3) == 'o' | arg(3) == 'O')) {
+            j = 4
+            call set(offset, ctoi(arg, j), arg(4), 0, 0, rmval-1)
+            }
+      else if (arg(1) == '+') {
+         j = 2
+         frstpg = ctoi(arg, j)
+         }
+      else if (arg(1) == '-' & arg(2) != EOS) {
+         j = 2
+         lastpg = ctoi(arg, j)
+         }
+      else {
+         if (arg(1) == '-')
+            fd = STDIN
+         else
+            fd = open(arg, READ)
+         if (fd == ERR)
+            {
+            call putlin (arg, ERROUT)
+            call remark (":  can't open.")
+            next
+            }
+         call doroff(fd)
+         nf = nf + 1
+         if (fd != STDIN)
+            call close(fd)
+         }
+   if (nf == 0) # no files, do STDIN
+      call doroff(STDIN)
+   call brk
+   if (plval <= 100 & (lineno > 0 | outp > 0))
+      call space(HUGE)         # flush last output
+  ifdef(PAGECONTROL)
+       call putc(PAGEJECT)
+       call putc('@n')
+  enddef
+ DRETURN
+   end
+
+
+### bold
+# bold - bold-face or overstrike a line
+   subroutine bold(buf, tbuf, size)
+   integer i, j, size
+   character buf(ARB), tbuf(ARB)
+
+   j = 1      # expand into tbuf
+   for (i = 1; buf(i) != '@n' & j < size-1; i = i + 1) {
+       tbuf(j) = buf(i)
+       j = j + 1
+       if (buf(i) != ' ' & buf(i) != '@t' & buf(i) != '@b' &
+           buf(i) != STARTU & buf(i) != STOPU) {
+          tbuf(j) = '@b'
+          tbuf(j+1) = tbuf(j-1)
+          tbuf(j+2) = '@b'
+          tbuf(j+3) = tbuf(j+1)
+          j = j + 4
+          }
+       }
+   tbuf(j) = '@n'
+   tbuf(j+1) = EOS
+   call scopy(tbuf, 1, buf, 1)   # copy it back to buf
+   return
+   end
+
+
+### brk
+# brk - end current filled line
+   subroutine brk
+   include "cout"
+
+   if (outp > 0) {
+       outbuf(outp) = '@n'
+       outbuf(outp+1) = EOS
+       call put(outbuf)
+       }
+   outp = 0
+   outw = 0
+   outwds = 0
+   return
+   end
+
+
+### center
+# center - center a line by setting tival
+   subroutine center(buf)
+   character buf(ARB)
+   integer max, width
+   include "cparam"
+
+   tival = max((rmval+tival-width(buf))/2, 0)
+   return
+   end
+
+
+### comand
+# comand - perform formatting command
+   subroutine comand(buf)
+   character buf(MAXLINE), name(MAXLINE), defn(MAXDEF), argtyp
+   integer comtyp, getval, max, getwrd, open, length
+   integer ct, spval, val, i, j
+   include "cpage"
+   include "cparam"
+   include "cfiles"
+   include "cnr"
+
+   ct = comtyp(buf, defn)
+   if (ct == UNKNOWN)   # ignore unknown commands
+       return
+   call doesc(buf, name, MAXLINE)
+   i = 1        # skip command name
+   while (buf(i) != ' ' & buf(i) != '@t' & buf(i) != '@n')
+       i = i + 1
+   val = getval(buf, i, argtyp)
+   if (ct == DEFINED)
+       call eval(buf, defn)
+   else if (ct == FI) {
+       call brk
+       fill = YES
+       }
+   else if (ct == NF) {
+       call brk
+       fill = NO
+       }
+   else if (ct == BR)
+       call brk
+   else if (ct == LS)
+       call set(lsval, val, argtyp, 1, 1, HUGE)
+   else if (ct == CE) {
+       call brk
+       call set(ceval, val, argtyp, 1, 0, HUGE)
+       }
+   else if (ct == UL) {
+       cuval = 0
+       call set(ulval, val, argtyp, 0, 1, HUGE)
+       }
+   else if (ct == BD)
+       call set(boval, val, argtyp, 0, 1, HUGE)
+   else if (ct == HE) {
+       call gettl(buf, ehead, ehlim)
+       call gettl(buf, ohead, ohlim)
+       }
+   else if (ct == FO) {
+       call gettl(buf, efoot, eflim)
+       call gettl(buf, ofoot, oflim)
+       }
+   else if (ct == BP) {
+       call brk       # perform break explicitly
+       if (lineno > 0)
+          call space(HUGE)
+       call set(curpag, val, argtyp, curpag+1, -HUGE, HUGE)
+       newpag = curpag
+       }
+   else if (ct == SP) {
+       call set(spval, val, argtyp, 1, 0, HUGE)
+       call space(spval)
+       }
+   else if (ct == IN) {
+       call brk
+       call set(inval, val, argtyp, 0, 0, rmval-1)
+       tival = inval
+       }
+   else if (ct == RM)
+       call set(rmval, val, argtyp, PAGEWIDTH, tival+1, HUGE)
+   else if (ct == TI) {
+       call brk
+       call set(tival, val, argtyp, 0, 0, rmval)
+       }
+   else if (ct == PL) {
+       call set(plval, val, argtyp, PAGELEN,
+          m1val+m2val+m3val+m4val+1, HUGE)
+       bottom = plval - m3val - m4val
+       }
+   else if (ct == PO)
+       call set(offset, val, argtyp, 0, 0, rmval-1)
+   else if (ct == M1)
+       call set(m1val, val, argtyp, 3, 0,
+            plval-m2val-m3val-m4val-1)
+   else if (ct == M2)
+       call set(m2val, val, argtyp, 2, 0,
+            plval-m1val-m3val-m4val-1)
+   else if (ct == M3) {
+       call set(m3val, val, argtyp, 2, 0,
+            plval-m1val-m2val-m4val-1)
+       bottom = plval - m3val - m4val
+       }
+   else if (ct == M4) {
+       call set(m4val, val, argtyp, 3, 0,
+            plval-m1val-m2val-m3val-1)
+       bottom = plval - m3val - m4val
+       }
+   else if (ct == EH)
+       call gettl(buf, ehead, ehlim)
+   else if (ct == OH)
+       call gettl(buf, ohead, ohlim)
+   else if (ct == EF)
+       call gettl(buf, efoot, eflim)
+   else if (ct == OF)
+       call gettl(buf, ofoot, oflim)
+   else if (ct == CC) {
+       cchar = argtyp
+       if (cchar == EOS | cchar == '@n')
+          cchar = '.'
+       if ((lineno + val) > bottom & lineno <= bottom) {
+          call space(val)
+          lineno = 0
+          }
+       }
+    else if (ct == NE)
+       {
+       if ((lineno + val) > bottom & lineno <= bottom)
+          {
+          call space(val)
+          lineno = 0
+          }
+       }
+   else if (ct == BS)
+       call set(bsval, val, argtyp, 1, 0, HUGE)
+   else if (ct == JU)
+       rjust = YES
+   else if (ct == NJ)
+       rjust = NO
+    else if ( ct == TA )
+        call settabs( buf(4) )
+   else if (ct == SO) {
+       if (getwrd(buf, i, name) == 0)
+          return
+       if (level + 1 > NFILES)
+          call error("so commands nested too deeply.")
+       infile(level+1) = open(name, READ)
+       if (infile(level+1) != ERR)
+          level = level + 1
+       }
+   else if (ct == CU) {
+       ulval = 0
+       call set(cuval, val, argtyp, 0, 1, HUGE)
+       }
+   else if (ct == DE)
+       call dodef(buf, infile(level))
+   else if (ct == NR) {
+       if (getwrd(buf, i, name) == 0)
+          return
+       call fold(name)
+       if (name(1) < 'a' | name(1) > 'z')
+          call error("invalid number register name.")
+       val = getval(buf, i, argtyp)
+       call set(nr(name(1)-'a'+1), val, argtyp, 0, -HUGE, HUGE)
+       }
+   else if (ct == ST) {
+       if (argtyp == '-')
+          spval = plval
+       else
+          spval = 0
+       call set(spval, val, argtyp, 0, 1, bottom)
+       if (spval > lineno & lineno == 0)
+          call phead
+       if (spval > lineno)
+          call space(spval - lineno)
+       }
+   return
+   end
+
+
+### comtyp
+# comtyp - decode command type
+   integer function comtyp(buf, defn)
+   character buf(MAXLINE), defn(MAXDEF)
+   character name(MAXNAME)
+   integer i
+   integer ludef, getwrd
+
+   i = 2
+   i = getwrd(buf, i, name)
+   if (i > 2)
+       name(3) = EOS
+   if (ludef(name, defn) == YES)
+       comtyp = DEFINED
+   else if (buf(2) == 'f' & buf(3) == 'i')
+       comtyp = FI
+   else if (buf(2) == 'n' & buf(3) == 'f')
+       comtyp = NF
+   else if (buf(2) == 'b' & buf(3) == 'r')
+       comtyp = BR
+   else if (buf(2) == 'l' & buf(3) == 's')
+       comtyp = LS
+   else if (buf(2) == 'b' & buf(3) == 'p')
+       comtyp = BP
+   else if (buf(2) == 's' & buf(3) == 'p')
+       comtyp = SP
+   else if (buf(2) == 'i' & buf(3) == 'n')
+       comtyp = IN
+   else if (buf(2) == 'r' & buf(3) == 'm')
+       comtyp = RM
+   else if (buf(2) == 't' & buf(3) == 'i')
+       comtyp = TI
+   else if (buf(2) == 'c' & buf(3) == 'e')
+       comtyp = CE
+   else if (buf(2) == 'u' & buf(3) == 'l')
+       comtyp = UL
+   else if (buf(2) == 'h' & buf(3) == 'e')
+       comtyp = HE
+   else if (buf(2) == 'f' & buf(3) == 'o')
+       comtyp = FO
+   else if (buf(2) == 'p' & buf(3) == 'l')
+       comtyp = PL
+   else if (buf(2) == 'p' & buf(3) == 'o')
+       comtyp = PO
+   else if (buf(2) == 'b' & buf(3) == 'd')
+       comtyp = BD
+   else if (buf(2) == 'm' & buf(3) == '1')
+       comtyp = M1
+   else if (buf(2) == 'm' & buf(3) == '2')
+       comtyp = M2
+   else if (buf(2) == 'm' & buf(3) == '3')
+       comtyp = M3
+   else if (buf(2) == 'm' & buf(3) == '4')
+       comtyp = M4
+   else if (buf(2) == 'e' & buf(3) == 'h')
+       comtyp = EH
+   else if (buf(2) == 'o' & buf(3) == 'h')
+       comtyp = OH
+   else if (buf(2) == 'e' & buf(3) == 'f')
+       comtyp = EF
+   else if (buf(2) == 'o' & buf(3) == 'f')
+       comtyp = OF
+   else if (buf(2) == 'c' & buf(3) == 'c')
+       comtyp = CC
+   else if (buf(2) == 'n' & buf(3) == 'e')
+       comtyp = NE
+   else if (buf(2) == 'b' & buf(3) == 's')
+       comtyp = BS
+   else if (buf(2) == 'j' & buf(3) == 'u')
+       comtyp = JU
+   else if (buf(2) == 'n' & buf(3) == 'j')
+       comtyp = NJ
+   else if (buf(2) == 's' & buf(3) == 'o')
+       comtyp = SO
+   else if (buf(2) == 'c' & buf(3) == 'u')
+       comtyp = CU
+   else if (buf(2) == 'd' & buf(3) == 'e')
+       comtyp = DE
+   else if (buf(2) == 'e' & buf(3) == 'n')
+       comtyp = EN
+   else if (buf(2) == 'n' & buf(3) == 'r')
+       comtyp = NR
+   else if (buf(2) == 's' & buf(3) == 't')
+       comtyp = ST
+   else if (buf(2) == 't' & buf(3) == 'a')
+       comtyp = TA
+   else
+       comtyp = UNKNOWN
+   return
+   end
+
+
+### dodef
+# dodef - define a command; .de xx is in buf
+   subroutine dodef(buf, fd)
+   character buf(MAXLINE)
+   integer fd
+   character name(MAXNAME), defn(MAXDEF)
+   integer i, junk
+   integer getwrd, addstr, addset, ngetln
+   include "cparam"
+
+   i = 1
+   junk = getwrd(buf, i, name)
+   i = getwrd(buf, i, name)   # get name
+   if (i == 0)
+      call error("missing name in command definition.")
+   if (i > 2)
+      name(3) = EOS   # truncate to xx
+   i = 1
+   while (ngetln(buf, fd) != EOF) {
+      if (buf(1) == cchar & buf(2) == 'e' & buf(3) == 'n')
+         break
+      junk = addstr(buf, defn, i, MAXDEF)
+      }
+   if (addset(EOS, defn, i, MAXDEF) == NO)
+      call error("definition too long.")
+   call entdef(name, defn)
+   return
+   end
+
+
+### doesc
+# doesc - expand escapes in buf
+   subroutine doesc(buf, tbuf, size)
+   character buf(ARB), tbuf(ARB)
+   integer size
+   integer i, j
+   integer itoc
+   include "cnr"
+
+   j = 1   # expand into tbuf
+   for (i = 1; buf(i) != EOS & j < size; i = i + 1)
+      if (buf(i) != '@@') {
+         tbuf(j) = buf(i)
+         j = j + 1
+         }
+      else if (buf(i+1) == '@@') {
+         tbuf(j) = '@@'
+         j = j + 1
+         i = i + 1
+         }
+      else if (buf(i+1) == 'n' & (buf(i+2) >= 'a' & buf(i+2) <= 'z')) {
+         j = j + itoc(nr(buf(i+2)-'a'+1), tbuf(j), size - j - 1)
+         i = i + 2
+         }
+      else {
+         tbuf(j) = buf(i)
+         j = j + 1
+         }
+   tbuf(j) = EOS
+   call scopy(tbuf, 1, buf, 1)
+   return
+   end
+
+
+### doroff
+# doroff - format text in file fd
+   subroutine doroff(fd)
+   integer fd
+   character inbuf(INSIZE)
+   integer ngetln
+   include "cfiles"
+   include "cparam"
+
+   infile(1) = fd
+   for (level = 1; level > 0; level = level - 1) {
+       while (ngetln(inbuf, infile(level)) != EOF)
+          if (inbuf(1) == cchar)   # it's a command
+             call comand(inbuf)
+          else               # it's text
+             call text(inbuf)
+       if (level > 1 & infile(level) >= 0)
+          call close(infile(level))
+       }
+   return
+   end
+
+# dotabs - expand tabs in buf
+   subroutine dotabs(buf, tbuf, size)
+   character buf(ARB), tbuf(ARB)
+   integer size
+
+       integer tab, wid
+       integer justab, gnxtab, width
+       include cparam
+
+       # go thru buf looking for tab characters.
+       len = length ( buf )
+       j = 1
+       i = 1
+       tab = 1
+
+       while ( i <= len )
+           if ( buf(i) == tabchar & tabpos(tab) < MAXLINE )
+               {
+               # found a tab - find the associated tab stop.
+               while ( j > tabpos(tab) )
+                   tab = tab + 1
+
+               if ( tabpos(tab) < MAXLINE )
+                   {
+                   # find the next tab in the input line (to get the
+                   # field width for centered & right justified tabs).
+                   # then do the appropriate justification.
+                   i = i + 1
+                   wid = gnxtab ( buf(i), tabchar ) - 1
+                   j = j + justab ( buf(i), wid, tabpos(tab) - j + 1,
+                                    tabjust(tab), tbuf(j) )
+                   i = i + wid
+
+                   # make sure that the next string uses the next
+                   # tab stop.
+                   tab = tab + 1
+                   }
+               }
+           else
+               {
+               tbuf(j) = buf(i)
+               j = j + 1
+               i = i + 1
+               }
+
+       tbuf(j) = EOS
+       call scopy( tbuf, 1, buf, 1 )
+       return
+    end
+### entdef
+# entdef - enter name and definition in macro table
+
+   subroutine entdef (name, defn)
+   character name (ARB), defn (ARB)
+
+   include "cmac"
+
+   integer i
+   integer length, lookup
+
+   pointer locn
+   pointer dsget
+
+   if (lookup (name, locn, mactbl) == YES)
+      call dsfree (locn)      # clobber old definition, if any
+
+   locn = dsget (length (defn) + 1)
+   call enter (name, locn, mactbl)
+   i = 1
+   while (defn (i) != EOS) {
+      mem (locn) = defn (i)
+      locn = locn + 1
+      i = i + 1
+      }
+   mem (locn) = EOS
+
+   return
+   end
+
+
+### eval
+# eval - evaluate defined command; push back definition
+   subroutine eval(buf, defn)
+   character buf(MAXLINE), defn(MAXDEF)
+   integer i, j, k, argptr(10)
+   integer length
+
+   for (j = 1; j <= 10; j = j + 1)   # initialize arguments to null
+      argptr(j) = 1
+   buf(1) = EOS
+   i = 2
+   for (j = 1; j <= 10; j = j + 1) {
+      call skipbl(buf, i)
+      if (buf(i) == '@n' | buf(i) == EOS)
+         break
+      argptr(j) = i
+      while (buf(i) != ' ' & buf(i) != '@t' & buf(i) != '@n' &
+             buf(i) != EOS)
+                i = i + 1
+      buf(i) = EOS
+      i = i + 1
+      }
+   for (k = length(defn); k > 1; k = k - 1)
+      if (defn(k-1) != ARGFLAG)
+         call putbak(defn(k))
+      else {
+         if (defn(k) < '0' | defn(k) > '9')
+            call putbak(defn(k))
+         else {
+            i = defn(k) - '0' + 1
+            i = argptr(i)
+            call pbstr(buf(i))
+            k = k - 1   # skip over $
+            }
+         }
+   if (k > 0)   # do last character
+      call putbak(defn(k))
+   return
+   end
+
+
+### finit
+# finit - set parameters to default values
+   subroutine finit
+   integer i
+   integer mod
+   pointer mktabl
+   include "cparam"
+   include "cpage"
+   include "cout"
+   include "cdefio"
+   include "cnr"
+   include "cmac"
+
+   inval = 0            # initialize cparam
+   rmval = PAGEWIDTH
+   tival = 0
+   lsval = 1
+   fill = YES
+   ceval = 0
+   ulval = 0
+   boval = 0
+   cchar = '.'
+   tjust(1) = LEFT
+   tjust(2) = CENTER
+   tjust(3) = RIGHT
+   bsval = 0
+   rjust = YES
+   cuval = 0
+   tabchar = '@t'
+   tabpos(1) = 1
+   tabjust(1) = LEFT
+   lineno = 0           # initialize cpage
+   curpag = 0
+   newpag = 1
+   plval = PAGELEN
+   m1val = 3
+   m2val = 2
+   m3val = 2
+   m4val = 3
+   bottom = plval - m3val - m4val
+   ehead(1) = '@n'
+   ehead(2) = EOS
+   ohead(1) = '@n'
+   ohead(2) = EOS
+   efoot(1) = '@n'
+   efoot(2) = EOS
+   ofoot(1) = '@n'
+   ofoot(2) = EOS
+   ehlim(1) = inval
+   ehlim(2) = rmval
+   ohlim(1) = inval
+   ohlim(2) = rmval
+   eflim(1) = inval
+   eflim(2) = rmval
+   oflim(1) = inval
+   oflim(2) = rmval
+   stopx = 0
+   frstpg = 0
+   lastpg = HUGE
+   print = YES
+   offset = 0
+   outp = 0             # initialize cout
+   outw = 0
+   outwds = 0
+   call dsinit (MEMSIZE)
+   mactbl = mktabl (1)  # symbol table for macros
+   bp = 0               # initialize cdefio
+   for (i = 1; i <= 26; i = i + 1)      # initialize cnr
+      nr(i) = 0
+   return
+   end
+
+
+### gettl
+# gettl - copy title from buf to ttl
+   subroutine gettl(buf, ttl, lim)
+   character buf(MAXLINE), ttl(MAXLINE)
+   integer i, lim(2)
+   include "cparam"
+
+   i = 1            # skip command name
+   while (buf(i) != ' ' & buf(i) != '@t' & buf(i) != '@n')
+       i = i + 1
+   call skipbl(buf, i)      # find argument
+   call scopy(buf, i, ttl, 1)   # copy titles to ttl
+   lim(1) = inval               # set limits
+   lim(2) = rmval
+   return
+   end
+
+
+### getval
+# getval - evaluate optional numeric argument; increment i
+   integer function getval(buf, i, argtyp)
+   character buf(MAXLINE), argtyp
+   integer i
+   integer ctoi
+
+   call skipbl(buf, i)      # find argument
+   argtyp = buf(i)
+   if (argtyp == '+' | argtyp == '-')
+       i = i + 1
+   getval = ctoi(buf, i)
+   return
+   end
+
+
+### getwrb
+# getwrb - get  a word; hangs onto trailing blanks
+   integer function getwrb(in,  i, out)
+   character in(ARB), out(ARB)
+   integer i, j
+
+   j = 1
+   while (in(i) != EOS & in(i) != ' ' & in(i) != '@t' & in(i) != '@n') {
+       out(j) = in(i)
+       i = i + 1
+       j = j + 1
+       }
+   while (in(i) == ' ') {     # include trailing blanks
+       out(j) = ' '
+       i = i + 1
+       j = j + 1
+       }
+   out(j) = EOS
+   getwrb = j - 1
+   return
+   end
+
+
+### gfield
+# gfield - get next tab or title field
+   integer function gfield(buf, i, n, temp, delim)
+   character buf(ARB), temp(ARB), delim
+   integer i, j, n
+
+   j = 1
+   if (n > 0) {
+        if (buf(i) == delim)
+           i = i + 1
+        while (buf(i) != delim & buf(i) != EOS & buf(i) != '@n' &
+               j <= n) {
+            temp(j) = buf(i)
+            j = j + 1
+            i = i + 1
+            }
+        }
+   temp(j) = EOS
+   gfield = j - 1   # set to number of characters copied
+   while (buf(i) != delim & buf(i) != EOS & buf(i) != '@n')
+       i = i + 1
+   return
+   end
+
+
+
+
+### gnxtab - return the index of the next tab stop or EOL/EOS
+#
+#
+integer function gnxtab( string, tabchar )
+character string(ARB), tabchar
+
+    for ( i=1; string(i) != tabchar & string(i) != '@n' &
+        string(i) != EOS; i=i+1 ) ;
+    
+    gnxtab = i
+
+return
+end
+
+
+### jcopy
+# jcopy - scopy without copying EOS
+   subroutine jcopy(from, i, to, j)
+   character from(ARB), to(ARB)
+   integer i, j, k1, k2
+
+   k1 = i
+   k2 = j
+   while (from(k1) != EOS) {
+        to(k2) = from(k1)
+        k1 = k1 + 1
+        k2 = k2 + 1
+        }
+   return
+   end
+
+
+
+### justabs - move and justify a tab field
+#
+integer function justab ( in, inlen, fieldwidth, justype, out )
+
+    integer inlen, fieldwidth, justype
+    character in(ARB), out(ARB)
+    integer lb
+
+    # compute the number of leading blanks that need to be
+    # output (based on the justification type).
+
+    if ( justype == RIGHT )
+
+        lb = max ( fieldwidth - inlen, 0 )
+
+    else if ( justype == CENTER )
+
+        lb = max ( ( fieldwidth - inlen ) / 2, 0 )
+
+    else
+
+        lb = fieldwidth
+
+    # supply the leading blanks, then the caller's string.
+
+    for ( i = 1; i <= lb; i = i + 1 )
+        out(i) = ' '
+
+    for ( i = 1; i <= inlen; i = i + 1 )
+        out(i+lb) = in(i)
+
+    justab = inlen + lb
+    return
+    end
+### justify
+# justfy - justifies string in its tab column
+   subroutine justfy(in, left, right, type, out)
+   character in(ARB), out(ARB)
+   integer left, right, type, max, j, n, width
+
+   n = width(in)
+   if (type == RIGHT)
+        call jcopy(in, 1, out, right-n)
+   else if (type == CENTER) {
+        j = max((right+left-n)/2, left)
+        call jcopy(in, 1, out, j)
+        }
+   else call jcopy(in, 1, out, left)
+   return
+   end
+
+
+### leadbl
+# leadbl - delete leading blanks, set tival
+   subroutine leadbl(buf)
+   character buf(MAXLINE)
+   integer max
+   integer i, j
+   include "cparam"
+
+   call brk
+   for (i = 1; buf(i) == ' '; i = i + 1)   # find 1st non-blank
+       ;
+   if (buf(i) != '@n')
+       tival = tival + i - 1
+   for (j = 1; buf(i) != EOS; j = j + 1) {   # move line to left
+       buf(j) = buf(i)
+       i = i + 1
+       }
+   buf(j) = EOS
+   return
+   end
+
+
+### ludef
+# ludef - look up a macro name, return its definition (if found)
+
+   integer function ludef (name, defn)
+   character name (ARB), defn (ARB)
+
+   include "cmac"
+
+   integer i
+   integer lookup
+
+   pointer locn
+
+   if (lookup (name, locn, mactbl) == NO) {
+      defn (1) = EOS
+      return (NO)
+      }
+
+   i = 1
+   while (mem (locn) != EOS) {
+      defn (i) = mem (locn)
+      locn = locn + 1
+      i = i + 1
+      }
+   defn (i) = EOS
+
+   return (YES)
+   end
+
+
+### ngetch
+# ngetch - get a (possibly pushed back) character from file fd
+   character function ngetch(c, fd)
+   character c
+   integer fd
+   character getch
+   include "cdefio"
+
+   if (bp > 0) {
+      c = buf(bp)
+      bp = bp - 1
+      }
+   else
+      c = getch(c, fd)
+   ngetch = c
+   return
+   end
+
+
+### ngetln
+# ngetln - get next line from f into line
+   integer function ngetln(line, f)
+   character line(MAXLINE), c, ngetch
+   integer f
+
+   for (ngetln = 0; ngetch(c, f) != EOF; ) {
+      if (ngetln < MAXLINE - 1) {
+         ngetln = ngetln + 1
+         line(ngetln) = c
+         }
+      if (c == '@n')
+         break
+      }
+   line(ngetln+1) = EOS
+   if (ngetln == 0 & c == EOF)
+      ngetln = EOF
+   return
+   end
+
+
+### pbstr
+# pbstr - push string back onto input
+   subroutine pbstr(in)
+   character in(MAXLINE)
+   integer length
+   integer i
+
+   for (i = length(in); i > 0; i = i - 1)
+      call putbak(in(i))
+   return
+   end
+
+
+### pfoot
+# pfoot - put out page footer
+   subroutine pfoot
+   integer mod
+   include "cpage"
+
+   call skip(m3val)
+   if (m4val > 0) {
+       if (mod(curpag, 2) == 1)
+          call puttl(efoot, eflim, curpag)
+       else
+          call puttl(ofoot, oflim, curpag)
+       ifnotdef(PAGECONTROL)
+          call skip(m4val-1) 
+       enddef
+       }
+   return
+   end
+
+
+### phead
+# phead - put out page header
+   subroutine phead
+   include "cpage"
+   integer c(MAXLINE)
+   integer mod
+
+   curpag = newpag
+   if (curpag >= frstpg & curpag <= lastpg)
+       print = YES
+   else print = NO
+   if(stopx > 0 & print == YES)
+      call prmpt(stopx)
+   newpag = newpag + 1
+   ifdef(PAGECONTROL)
+         if (stopx == 0 & print == YES)
+              call putc(PAGEJECT)
+   enddef
+   if (m1val > 0) {
+       call skip(m1val-1)
+       if (mod(curpag, 2) == 0)
+          call puttl(ehead, ehlim, curpag)
+       else
+          call puttl(ohead, ohlim, curpag)
+       }
+   call skip(m2val)
+   lineno = m1val + m2val + 1
+   return
+   end
+
+
+### prmpt
+# prmpt - pause for paper insertion; prompt if i == 1; increment i
+   subroutine prmpt(i)
+   integer i
+   integer open, getlin
+   integer tin, tout, junk
+   character line(MAXLINE)
+   string tell "Type return to begin a page"
+   string trmin TERMINAL_IN
+   string trmout TERMINAL_OUT
+
+   if (i == 1)
+        {
+        tout = open(trmout, WRITE)
+        if (tout == ERR)
+                return
+        call putlin(tell, tout)
+        call flush(tout)
+        }
+   tin = open(trmin, READ)
+   if (tin == ERR)
+        return
+   junk = getlin(line, tin)
+   call close(tin)
+   if (i == 1)
+        call close(tout)
+   i = i + 1
+   return
+   end
+
+
+### put
+# put - put out line with proper spacing and indenting
+   subroutine put(buf)
+   character buf(MAXLINE)
+   integer min, width
+   integer i, j, k, w, c, cuflg
+   include "cpage"
+   include "cparam"
+   data cuflg /NO/
+
+   if (lineno == 0 | lineno > bottom)
+       call phead
+   if (print == YES) {
+       for (i = 1; i <= offset; i = i + 1)      # page offset
+          call putc(' ')
+       for (i = 1; i <= tival; i = i + 1)      # indenting
+          call putc(' ')
+       for (i = 1; buf(i) != EOS & buf(i) != '@n'; i = i + 1)
+           if (buf(i) == STARTU)
+              cuflg = YES
+           else if (buf(i) == STOPU)
+              cuflg = NO
+           else if (cuflg == YES) {     # underlining
+              for (j = i; buf(i) != STOPU & buf(i) != '@n' &
+                 buf(i) != EOS; i = i + 1)
+                    ;
+              c = buf(i)
+              buf(i) = EOS
+              w = width(buf(j))
+              for (k = 1; k <= w; k = k + 1)
+                 call putch('_', STDOUT)
+              for (k = 1; k <= w; k = k + 1)
+                 call putch('@b', STDOUT)
+              for (; j < i; j = j + 1)
+                 call putch(buf(j), STDOUT)
+              buf(i) = c
+              i = i - 1
+              }
+           else
+              call putch(buf(i), STDOUT)
+       call putch('@n', STDOUT)
+       }
+   tival = inval
+   call skip(min(lsval-1, bottom-lineno))
+   lineno = lineno + lsval
+   if (lineno > bottom)
+       call pfoot
+   return
+   end
+
+
+### putbak
+# putbak - push character back onto input
+   subroutine putbak(c)
+   character c
+   include "cdefio"
+
+   bp = bp + 1
+   if (bp > BUFSIZE)
+      call error("too many characters pushed back.")
+   buf(bp) = c
+   return
+   end
+
+
+### puttl
+# puttl - put out title line with optional page number & date
+   subroutine puttl(buf, lim, pageno)
+   character buf(MAXLINE), chars(MAXCHARS), delim, cdate(20)
+   character pchar, dchar
+   integer pageno, lim(2)
+   integer nc, itoc, i, j, n, left, right, gfield, ncd, now (7)
+   integer length
+   include "cpage"
+   include "cparam"
+   include "ctemp"
+
+   if (print == NO)
+       return
+   left = lim(1) + 1
+   right = lim(2) + 1
+   nc = itoc(pageno, chars, MAXCHARS)
+   call getnow (now)
+   call fmtdat (cdate, tbuf1, now, STANDARD)
+   ncd = length(cdate)
+   i = 1
+   delim = buf(i)
+   for (j = 1; j < right; j = j + 1)
+        ttl(j) = ' '
+   n = 0
+   pchar = PAGENUM
+   dchar = CURRENTDATE
+   repeat {
+        n = n + 1         # update title counter
+        if (gfield(buf, i, right-left, tbuf1, delim) > 0) {
+            call subst(tbuf1, pchar, tbuf2, chars, nc)
+            call subst(tbuf2, dchar, tbuf1, cdate, ncd)
+            call justfy(tbuf1, left, right, tjust(n), ttl)
+            }
+        } until (buf(i) == EOS | buf(i) == '@n' | n == 3)
+   while (ttl(right-1) == ' ')        # trim blanks
+       right = right - 1
+   ttl(right) = '@n'
+   ttl(right+1) = EOS
+   for (i = 1; i <= offset; i = i + 1)
+       call putc(' ')  # offset
+   call putlin(ttl, STDOUT)
+   return
+   end
+
+
+### putwrd
+# putwrd - put a word in outbuf; includes margin justification
+   subroutine putwrd(wrdbuf)
+   character wrdbuf(INSIZE)
+   integer length, width
+   integer last, llval, nextra, w
+   include "cout"
+   include "cparam"
+
+   w = width(wrdbuf)
+   last = length(wrdbuf) + outp         # new end of outbuf
+   llval = rmval - tival
+   if (outw + w > llval | last >= MAXOUT) {    # too big
+        last = last - outp
+        nextra = llval - outw
+        for (outp = outp + 1; outp > 1; outp = outp - 1)
+           if (outbuf(outp-1) == ' ')
+              nextra = nextra + 1
+           else
+              break
+        if (rjust == YES) {
+           call spread(outbuf, outp, nextra, outwds)
+           if (nextra > 0 & outwds > 1)
+              outp = outp + nextra
+           }
+        call brk         # flush previous line
+        }
+   call scopy(wrdbuf, 1, outbuf, outp+1)
+   outp = last
+   outw = outw + w
+   outwds = outwds + 1
+   return
+   end
+
+
+### set
+# set - set parameter and check range
+   subroutine set(param, val, argtyp, defval, minval, maxval)
+   integer max, min
+   integer defval, maxval, minval, param, val
+   character argtyp
+
+   if (argtyp == '@n')      # defaulted
+       param = defval
+   else if (argtyp == '+')      # relative +
+       param = param + val
+   else if (argtyp == '-')   # relative -
+       param = param - val
+   else               # absolute
+       param = val
+   param = min(param, maxval)
+   param = max(param, minval)
+   return
+   end
+
+
+
+
+### settabs - set up tabstops
+#
+subroutine settabs ( buf )
+
+    character buf(ARB), sign
+    integer ctoi, val, tab, lastpos
+
+    include cparam
+
+    lastpos = 0
+    tab = 1
+    i = 1
+    call skipbl ( buf, i )
+
+    while ( buf(i) != '@n' )
+        {
+        call skipbl ( buf, i )
+
+        sign = buf(i)
+        if ( sign == '+' | sign == '-' )
+            i = i + 1
+
+        val = ctoi ( buf, i )
+        call set ( lastpos, val, sign, 0, 0, INSIZE )
+
+        tabpos(tab) = lastpos
+
+        if ( buf(i) == 'r' | buf(i) == 'R' )
+            {
+            tabjust(tab) = RIGHT
+            i = i + 1
+            }
+        else if ( buf(i) == 'c' | buf(i) == 'C' )
+            {
+            tabjust(tab) = CENTER
+            i = i + 1
+            }
+        else
+            tabjust(tab) = LEFT
+       
+        #ignore unrecognized chars
+        for (; buf(i) != ' ' & buf(i) != '@n' & buf(i) != '@t'; i=i+1);
+
+        tab = tab + 1
+        }
+
+    # add a 'stopper' tab to the tab table.
+
+    tabpos(tab) = MAXLINE
+    tabjust(tab) = LEFT
+    return
+    end
+### skip
+# skip - output  n  blank lines
+   subroutine skip(n)
+   integer i, n
+   include "cpage"
+
+   if (print == YES)
+       for (i = 1; i <= n; i = i + 1)
+          call putc('@n')
+   return
+   end
+
+
+### space
+# space - space  n  lines or to bottom of page
+   subroutine space(n)
+   integer min
+   integer n
+   include "cpage"
+
+   call brk
+   if (lineno > bottom)
+       return
+   if (lineno == 0)
+       call phead
+   call skip(min(n, bottom+1-lineno))
+   lineno = lineno + n
+   if (lineno > bottom)
+       call pfoot
+   return
+   end
+
+
+### spread
+# spread - spread words to justify right margin
+   subroutine spread(buf, outp, nextra, outwds)
+   character buf(MAXOUT)
+   include "cparam"
+   integer min
+   integer dir, i, j, nb, ne, nextra, nholes, outp, outwds
+   data dir /0/
+
+   if (nextra <= 0 | outwds <= 1)
+       return
+   dir = 1 - dir   # reverse previous direction
+   ne = nextra
+   nholes = outwds - 1
+   if (tival != inval & nholes > 1)
+       nholes = nholes - 1
+   i = outp - 1
+   j = min(MAXOUT-2, i+ne)   # leave room for NEWLINE, EOS
+   while (i < j) {
+       buf(j) = buf(i)
+       if (buf(i) == ' ' & buf(i-1) != ' ') {
+          if (dir == 0)
+             nb = (ne-1) / nholes + 1
+          else
+             nb = ne / nholes
+          ne = ne - nb
+          nholes = nholes - 1
+          for ( ; nb > 0; nb = nb - 1) {
+             j = j - 1
+             buf(j) = ' '
+             }
+          }
+       i = i - 1
+       j = j - 1
+       }
+   return
+   end
+
+
+### subst
+# subst - substitutes a string for a specified character
+   subroutine subst(in, char, out, subara, n)
+   character in(ARB), char, out(ARB), subara(ARB)
+   integer i, j, k, n
+
+   j = 1
+   for (i = 1; in(i) != EOS; i = i + 1)
+        if (in(i) == char)
+            for (k = 1; subara(k) != EOS; k = k + 1) {
+                out(j) = subara(k)
+                j = j + 1
+                }
+        else {
+            out(j) = in(i)
+            j = j + 1
+            }
+   out(j) = EOS
+   return
+   end
+
+
+### text
+# text - process text lines
+   subroutine text(inbuf)
+   character inbuf(INSIZE), wrdbuf(INSIZE)
+   integer getwrb, length
+   integer i, cuflg
+   include "cparam"
+   data cuflg /NO/
+
+   call dotabs(inbuf, wrdbuf, INSIZE)   # expand tabs
+   call doesc(inbuf, wrdbuf, INSIZE)    # expand escapes
+   if (inbuf(1) == ' ' | inbuf(1) == '@n')
+       call leadbl(inbuf)                    # move left, set tival
+   if (ulval > 0) {                          # word underlining
+       call underl(inbuf, wrdbuf, INSIZE)
+       ulval = ulval - 1
+       }
+   if (cuval > 0) {                          # continuous underlining
+       if (cuflg == NO) {
+           call scopy(inbuf, 1, wrdbuf, 1)
+           inbuf(1) = STARTU
+           call scopy(wrdbuf, 1, inbuf, 2)
+           cuflg = YES
+           }
+       cuval = cuval - 1
+       if (cuflg == YES & cuval == 0) {
+           i = length(inbuf)
+           inbuf(i) = STOPU
+           inbuf(i+1) = '@n'
+           inbuf(i+2) = EOS
+           cuflg = NO
+           }
+       }
+   if (boval >  0) {                         # boldfacing
+       call bold(inbuf, wrdbuf, INSIZE)
+       boval = boval - 1
+       }
+   if (ceval >  0) {                         # centering
+       call center(inbuf)
+       call put(inbuf)
+       ceval = ceval - 1
+       }
+   else if (inbuf(1) == '@n')             # all blank line
+       call put(inbuf)
+   else if (fill == NO)              # unfilled text
+       call put(inbuf)
+   else {                                     # filled text
+       i = length(inbuf)
+       inbuf(i) = ' '
+       if (inbuf(i-1) == '.') {
+          i = i + 1
+          inbuf(i) = ' '
+          }
+       inbuf(i+1) = EOS
+       for (i = 1; getwrb(inbuf, i, wrdbuf) > 0; )
+           call putwrd(wrdbuf)
+       }
+   return
+   end
+
+
+### underl
+# underl - underline words in a line
+   subroutine underl(buf, tbuf, size)
+   integer i, j, size, t, type
+   character buf(ARB), tbuf(ARB)
+
+   j = 1      # expand into tbuf
+   i = 1
+   while (j < size - 1) {
+      for (t = type(buf(i)); t != LETTER & t != DIGIT & t != '@n' &
+           t != EOS; t = type(buf(i))) {
+         tbuf(j) = buf(i)
+         i = i + 1
+         j = j + 1
+         }
+      if (buf(i) == EOS | buf(i) == '@n')
+         break
+      tbuf(j) = STARTU
+      j = j + 1
+      for (t = type(buf(i)); t == LETTER | t == DIGIT | t == '-';
+           t = type(buf(i))) {
+         tbuf(j) = buf(i)
+         i = i + 1
+         j = j + 1
+         }
+      tbuf(j) = STOPU
+      j = j + 1
+      }
+   tbuf(j) = '@n'
+   tbuf(j+1) = EOS
+   call scopy(tbuf, 1, buf, 1)   # copy it back to buf
+   return
+   end
+
+
+### width
+# width - compute width of character string
+   integer function width(buf)
+   character buf(MAXLINE)
+   integer i
+
+   width = 0
+   for (i = 1; buf(i) != EOS; i = i + 1)
+       if (buf(i) == '@b')
+          width = width - 1
+       else if ( buf(i) != '@n' )
+          width = width + 1
+   return
+   end
+
+
+
+
+#-t-  format                    35174  ascii   07Jan84  11:42:09
+                                                                                                                                                                                                                                                                                                                    

@@ -1,0 +1,281 @@
+#-h-  ratdef                     7446  ascii   16-Jan-84  00:58:24
+#nolist
+############################################################################
+#
+#                            R A T D E F
+#
+############################################################################
+#
+# version date initials remarks
+# ------- ---- -------- ----------------------------------------------------
+#   02f  06Oct83  cal   Added machine dependent NOIMPLICIT defines.
+#   02e  18Sep83  cal   Added defines for VAXUNIX.
+#   02d  02Aug83  cal   Simplified DRIVER macro. Added the standard defines
+#                       STANDARD and SORTABLE and removed the unused define
+#                       SPAWNFAILED.
+#   02C  20Jul83  MS    Fixed misspelling of MAXLINE in definition of MAXPAT
+#   02b  14Jul83  cal   Made single quoted strings double quoted.
+#   02A  07Jul83  MS    Rewritten, reworked, reorganized. Renamed from
+#                       'symbols.'
+#
+############################################################################
+
+#include ratfor
+
+
+### PRINTF MACROS
+
+## macro definitions for routines 'prints', 'fprintf' and 'printf'
+
+
+mdefine(P_,$(ifelse($1,-,,$(,$) ifelse($1,,0,$1) $(P_($2,$3,$4,$5,$6,$7,-)$))$))
+define(prints,prits($1,$2 P_($3,$4,$5,$6,$7,$8,$9)))
+define(fprintf,priftf($1,$2 P_($3,$4,$5,$6,$7,$8,$9)))
+define(printf,pritf($1 P_($2,$3,$4,$5,$6,$7,$8)))
+
+
+###  GENERAL DEFINITIONS
+
+# Commonly used return status values, identifiers, etc. go here.
+
+
+define(ALPHA,-9)
+define(AND,'&')
+define(ANDWAIT,51)
+define(APPEND,4)
+define(ARB,30000)
+define(ARGBUFSIZE,512)		# size of buffer for arguments to spawn
+define(ASCII,12)
+define(BACKGR,'b')
+define(BEGINNING_OF_FILE,-2)	# flag to seek for positioning at
+define(BINARY,60)
+define(CHILD_ERROR,-4)		# error status from spawn ( new name )
+define(COOKED,NO)
+define(DIGIT,2)
+define(END_OF_FILE,-1)		# flag to seek for positioning at
+define(ERR,-3)
+define(ERROUT,3)
+define(ESCAPE,'@@')		#escape character for ch, find, tr, ed, and
+define(FILE_DOESNT_EXIST,-1)
+define(HUGE,30000)
+define(LAMBDA,0)		# end of list marker
+define(LETTER,1)
+define(LOCAL,6)			# flag for local-type character files
+define(MAXCHARS, 20)
+define(MAXNAME, FILENAMESIZE)
+define(MAXPAT,arith(2,*,MAXLINE))	# max size of encoded patterns
+define(NCHARS,34)
+define(NO,0)
+define(NOT,'!')
+define(NOT_FOUND, -1)
+define(NOWAIT,'n')
+define(OK,0)
+define(OR,'|')
+define(ORWAIT,50)		# values for andflag in pwait call
+define(PIDSIZE,9)		# size for descr field in spawn call
+define(RAW,YES)			# like on VAX
+define(READ,1)
+define(READWRITE,3)
+define(SORTABLE,2)		# token for fmtdat()
+define(STANDARD,1)		# token for fmtdat()
+define(STDIN,1)
+define(STDOUT,2)
+define(TERMSGSIZE,21)		# size of integer array for pwait return
+define(WAIT,'w')
+define(WRITE,2)
+define(YES,1)
+
+
+###  TEXT SUBSTITUTION
+
+# Textual macros, ratfor fixes and extensions, etc. go here
+
+
+define(abs,iabs)
+define(andif,if)
+define(CHARACTER,character)
+define(cvt_to_cptr,(CHAR_PER_INT*($1-1)+1))	# convert pointer to char ptr
+define(DRETURN,ifelse($1,,call endst(OK),call endst($1)))
+define(DRIVER,program ifelse($1,,main,$1); call initst)
+define(DS_DECL,integer $1($2);common/cdsmem/$1)	# stug standard
+define(FILEDES,filedes)
+define(filedes,integer)		# file descriptor/designator data type
+define(IS_DIGIT,('0'<=$1&$1<='9'))	# valid only for ASCII!
+define(IS_LETTER,(IS_UPPER($1)|IS_LOWER($1)))
+define(IS_LOWER,('a'<=$1&$1<='z'))
+define(IS_UPPER,('A'<=$1&$1<='Z'))
+define(long_real,double precision)
+define(max,max0)
+define(min,min0)
+define(pointer,integer)
+define(POINTER,pointer)
+define(STDERR,ERROUT)
+define(TERMINAL_IN,"/!TT")
+define(TERMINAL_OUT,"/!TT")
+
+
+###  SUSPECT STANDARD DEFINTIONS
+
+# Definitions from the stug standard that have yet to be assimilated corrctly.
+# If possilbe, these definitions should be move to other sections or deleted.
+# Hopefully, this section will not last long.
+
+
+define(NOERR,0)			# flag for successful completion
+define(MAXARG,128)		# max size of command line argument
+
+# "Machine-dependent parameters"
+
+define(BITS_PER_CHAR,8)
+define(BITS_PER_WORD,16)
+define(CHARS_PER_WORD,2)
+define(MAX_INTEGER,32767)
+define(MIN_INTEGER,-32768)
+define(MAX_REAL_EXP,38)
+define(MIN_REAL_EXP,-38)
+define(REAL_PRECISION,6)
+
+
+ifdef (VAX)
+
+    ###  GENERAL DEFINITIONS
+
+    # Special definitions for DEC VMS and IAS operating systems
+
+    define(CHAR_PER_INT,4)
+    define(EOF,-1)
+    define(EOS,0)
+    define(FILENAMESIZE,100)
+    define(MAXCARD,399)
+    define(MAXDIRECTS,11)	# maximum path tokens in filename
+    define(MAX_EXTENSION_SIZE, 5)	# max size of file extension on vax
+    define(MAXLINE,400)
+    define(MAXOFILES,15)
+    define(MAX_SIMPLE_NAME_SIZE, 20)	# max size of simple name on vax
+					# includes simple name,
+					# extension and version
+    define(MAX_VERSION_SIZE, 7)	# max size of version (';32767' + EOS)
+    define(NULLPOINTER,-1)
+    define(PATH,1)
+    define(TCOLWIDTH,24)	# width of date string returned by gdraux
+    define(USERSIZE,20)		# size of user arg to mailid
+
+
+    ###  TEXT SUBSTITUTION
+
+
+    define(character,logical*1)
+    define(EOF_STRING,"^Z")
+    define(index,indexx)	# avoid conflict with system library utility
+    define(INDEX,INDEXX)	# ditto
+    define(NOIMPLICIT,implicit none)
+
+enddef
+
+
+ifdef (MODCOMP)
+
+    ###  GENERAL DEFINITIONS
+
+    ## Special definitions for Modcomp MAX-IV
+
+
+    define(CHAR_PER_INT,1)
+    define(EOF,258)
+    define(EOR,257)
+    define(EOS,256)
+    define(FILENAMESIZE,101)	# filenames can be 100 chars long, plus EOS
+    define(MAXCARD,136)		# card size
+    define(MAXLINE,137)		# 1 more than MAXCARD
+    define(MAXOFILES, 15)	# never used on Modcomp
+
+
+    ###  TEXT SUBSTITUTION
+
+    define(character,integer)	# define characters to be 16-bit integers
+    define(EOF_STRING,"$$")
+    define(NOIMPLICIT,implicit logical (a-z))
+
+enddef
+
+
+ifdef (VAXUNIX)
+
+    ###  GENERAL DEFINITIONS
+
+    # Special definitions for Vax Unix operating system
+
+    define(STDIN,0)
+    define(STDOUT,1)
+    define(ERROUT,2)
+
+    define(CHAR_PER_INT,4)
+    define(EOF,-1)
+    define(EOS,0)
+    define(FILENAMESIZE,100)
+    define(MAXCARD,399)
+    define(MAXDIRECTS,11)	# maximum path tokens in filename
+    define(MAX_EXTENSION_SIZE, 5)	# max size of file extension on vax
+    define(MAXLINE,400)
+    define(MAXOFILES,15)
+    define(MAX_SIMPLE_NAME_SIZE, 20)	# max size of simple name on vax
+					# includes simple name,
+					# extension and version
+    define(MAX_VERSION_SIZE, 7)	# max size of version (';32767' + EOS)
+    define(NULLPOINTER,-1)
+    define(PATH,1)
+
+
+
+    define(BITS_PER_WORD,32)
+    define(CHARS_PER_WORD,4)
+    define(TERMINAL_IN,"/dev/tty")
+    define(TERMINAL_OUT,"/dev/tty")
+
+    ###  TEXT SUBSTITUTION
+
+
+    define(character,integer*2)
+    define(EOF_STRING,"^D")
+    define(index,indexx)	# avoid conflict with system library utility
+    define(INDEX,INDEXX)	# ditto
+    define(flush,flushx)	# ditto
+    define(NOIMPLICIT,)		# the f77 compiler has a noimplicit flag
+
+enddef
+
+
+ifdef (PDP_10)
+
+    ###  GENERAL DEFINITIONS
+
+    define(APPEND,2)
+    define(CHAR_PER_INT,1)
+    define(EOS,0)
+    define(EOF,10003)
+    define(ERR,10001)
+    define(ERROUT,7)
+    define(FILENAMESIZE,64)
+    define(MAXCARD,200)
+    define(MAXLINE,201)
+    define(OK,-2)
+    define(READ,0)
+    define(READWRITE,10)
+    define(STDIN,5)
+    define(STDOUT,6)
+    define(WRITE,1)
+
+
+    ###  TEXT SUBSTITUTION
+
+    define(character,integer)
+    define(EOF_STRING,"^Z")
+    define(NO,.false.)
+    define(YES,.true.)
+    define(NOIMPLICIT,)		# who knows?
+
+enddef
+
+#list
+#-t-  ratdef                     7446  ascii   16-Jan-84  00:58:24
+                                                                                                    

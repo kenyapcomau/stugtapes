@@ -1,0 +1,3183 @@
+#-h-  edin                      28615  local   12/01/80  16:30:25
+#-h-  edin.doc                   3056  local   12/01/80  16:24:30
+.bp 1
+.in 0
+.he 'EDIN (1)'7/2/80'EDIN (1)'
+.fo ''-#-''
+.fi
+.in 7
+.ti -7
+NAME
+.br
+edin - in-core text editor
+.sp 1
+.ti -7
+SYNOPSIS
+.br
+edin [file]
+.sp 1
+.ti -7
+DESCRIPTION
+.br
+Edin is a simple version of the text editor which keeps the entire
+file in a buffer in core (as opposed to storing it on a scratch
+file).
+It thus can handle only small files.
+It is included only as a temporary editor to use while
+implementing the full-fledged version of ed.
+.sp 1
+.ti -7
+FILES
+.br
+None
+.sp 1
+.ti -7
+SEE ALSO
+.br
+ed (or edit), sedit, find, ch
+.br
+Kernighan and Plauger's "Software Tools", pages 163-208
+.fi
+.sp 1
+.ne 5
+.ti -7
+DIAGNOSTICS
+.br
+file size exceeded
+.br
+.in +5
+printed whenever the maximum number of characters allowed has been
+exceeded.
+The size of the in-core buffer is determined by the MAXBUF
+definition in the source code.
+.in -5
+.sp
+The error message "?" is printed whenever an edit command
+fails or is not understood.
+.sp 1
+.ti -7
+AUTHORS
+.br
+Straight from "Software Tools", with few changes and
+very little testing.
+.sp
+.ti -7
+CHANGES
+.br
+This editor is basically the one provided in the book
+except that it has been taught to read both upper and
+lower case commands and it prints a message when the
+file is too big to fit in the buffer.
+.sp
+.ti -7
+BUGS/DEFICIENCIES
+.br
+Who knows....
+.sp 2
+.ne 45
+.in 0
+.ce
+COMMAND SUMMARY
+.in 5
+.sp
+.nf
+.ti -5
+Addresses:
+.br
+ 17      a decimal number
+ .       the "current" line
+ $       the last line of the file
+ /pat/   search forward for line containing pat
+ \pat\   search backward for line containing pat
+ line+n  n lines forward from line
+ line-n  n lines backward from line
+.sp
+.ti -5
+Defaults:
+.br
+ (.)     use current line
+ (.+1)   use the next line
+ (.,.)   use current line for both line numbers
+ (1,$)   use all lines
+.sp
+.ti -5
+Commands:
+.br
+ (.)     a               append text after line
+                         (text follows)
+ (.,.)   c               change text (text follows)
+ (.,.)   d               delete text
+         e file          discard current text, enter file,
+                         remember file name
+         f               print file name
+         f file          remember file name
+ (.)     i               insert text before line (text follows)
+ (.,.)   m line3         move text to after line3
+ (.,.)   p               print text (can be appended to other commands)
+         q               quit
+ (.)     r file          read file, appending after line
+ (.,.)   s/pat/new/gp    substitute new for leftmost pat
+                         (g implies all occurrences)
+ (1,$)   w file          write file, leave current text unaltered
+                         (if "file" isn't given, write to current
+                         filename)
+ (.)     =p              print line number, current line
+ (.+1)   <CR>            print next line
+ (1,$)   g/pat/command   do command on lines containing pat
+                         (except a, c, i, q commands)
+ (1,$)   x/pat/command   do command on lines not containing pat
+                         (except a, c, i, q commands)
+.in 0
+.fi
+#-t-  edin.doc                   3056  local   12/01/80  16:24:30
+#-h-  cbuf                        138  local   12/01/80  16:24:31
+ # put on "cbuf"
+ common /cbuf/  buf(MAXBUF), lastbf
+ integer buf #buffer for pointers and text
+ integer lastbf #last element used in buf
+#-t-  cbuf                        138  local   12/01/80  16:24:31
+#-h-  cfile                        90  local   12/01/80  16:24:31
+ # put on "cfile"
+ common /cfile/ savfil(MAXLINE)
+ character savfil #remembered file name
+#-t-  cfile                        90  local   12/01/80  16:24:31
+#-h-  clines                      359  local   12/01/80  16:24:32
+ # put on "clines"
+ common /clines/ line1, line2, nlines, curln, lastln
+                                                                                
+ integer line1 # first line number
+ integer line2 # second line number
+ integer nlines # number of line numbers specified
+ integer curln  # current line: value of dot
+ integer lastln # last lne: value of $
+#-t-  clines                      359  local   12/01/80  16:24:32
+#-h-  cpat                         69  local   12/01/80  16:24:32
+ # put on "cpat"
+ common /cpat/ pat(MAXPAT)
+ character pat  #pattern
+#-t-  cpat                         69  local   12/01/80  16:24:32
+#-h-  ctxt                         95  local   12/01/80  16:24:32
+ # put on "ctxt"
+ common /ctxt/ txt(MAXLINE)
+ character txt #text line for matching and output
+#-t-  ctxt                         95  local   12/01/80  16:24:32
+#-h-  edin.r                    23884  local   12/01/80  16:29:26
+#-h-  edit                       1899  local   12/01/80  16:25:59
+  ## ed - driver subroutine for editor
+
+
+
+ # definitions for in-core editor
+  define(MAXBUF,6000)           #size of buffer array
+                                #(make it as big as you possibly can)
+  define(DITTO,(-3))
+  define(GLOBAL,LETG)
+  define(PRINT,LETP)
+  define(MARKED,LETY)
+  define(NOMARK,LETN)
+  define(FORWARD,0)
+  define(BACKWARD,-1)
+  define(EXCLUDE,LETX)
+  define(APPENDCOM,LETA)
+  define(CHANGE,LETC)
+  define(DELCOM,LETD)
+  define(ENTER,LETE)
+  define(PRINTFIL,LETF)
+  define(READCOM,LETR)
+  define(WRITECOM,LETW)
+  define(INSERT,LETI)
+  define(PRINTCUR,EQUALS)
+  define(MOVECOM,LETM)
+  define(QUIT,LETQ)
+  define(SUBSTITUTE,LETS)
+  define(CURLINE,PERIOD)
+  define(LASTLINE,DOLLAR)
+  define(SCAN,SLASH)
+  define(BACKSCAN,BACKSLASH)
+  define(NOSTATUS,1)
+  define(LINE0,1)
+  define(PREV,0)
+  define(NEXT,1)
+  define(MARK,2)
+  define(TEXT,3)
+
+
+
+ DRIVER(ed)
+   character lin(MAXLINE)
+   integer ckglob, docmd, doglob, doread, getarg, getlin, getlst
+   integer i, status, cursav
+   include cfile
+   include clines
+   include cpat
+
+   # Initialize variables and buffers
+   call setbuf
+   pat(1) = EOS
+   savfil(1) = EOS
+
+   call query ("usage:  edin file.")
+  if (getarg(1, savfil, MAXLINE) != EOF)
+        {
+         if (doread (0, savfil, ENTER) == ERR)
+                call remark ('?.')
+         }
+   while(getlin(lin, STDIN) != EOF)
+        {
+            i = 1
+            cursav = curln
+            if (getlst(lin, i, status) == OK) {
+               if (ckglob(lin, i, status) == OK)
+                  status = doglob(lin, i, cursav, status)
+               else if (status != ERR)
+                  status = docmd(lin, i, NO, status)
+         # else error, do nothing
+            }
+      if (status == ERR) {
+         call remark('?.')
+         curln = cursav
+         }
+      else if (status == EOF)
+            break
+      # else OK, loop
+      }
+ call clrbuf
+  DRETURN
+   end
+#-t-  edit                       1899  local   12/01/80  16:25:59
+#-h-  append                      525  local   12/01/80  16:25:59
+  ## append - append lines after 'line'
+   integer function append(line, glob)
+   character lin(MAXLINE)
+   integer getlin, inject
+   integer line, glob
+   include clines
+
+   if (glob == YES)
+      append = ERR
+   else {
+      curln = line
+      for (append = NOSTATUS; append == NOSTATUS; )
+         if (getlin(lin, STDIN) == EOF)
+            append = EOF
+         else if (lin(1) == PERIOD & lin(2) == NEWLINE)
+            append = OK
+         else if (inject(lin) == ERR)
+            append = ERR
+      }
+   return
+   end
+#-t-  append                      525  local   12/01/80  16:25:59
+#-h-  ckglob                     1071  local   12/01/80  16:25:59
+  ## ckglob - if global prefix, mark lines to be affected
+   integer function ckglob(lin, i, status)
+   character lin(MAXLINE)
+   integer defalt, getind, gettxt, match, nextln, optpat
+   integer gflag, i, k, line, status
+   character clower
+   include cbuf
+   include clines
+   include cpat
+   include ctxt
+
+   if (clower(lin(i)) != GLOBAL & clower(lin(i)) != EXCLUDE)
+      status = EOF
+   else {
+      if (clower(lin(i)) == GLOBAL)
+         gflag = YES
+      else
+         gflag = NO
+      i = i + 1
+      if (optpat(lin, i) == ERR | defalt(1, lastln, status) == ERR)
+         status = ERR
+      else {
+         i = i + 1
+         for (line = line1; line <= line2; line = line + 1) {
+            k = gettxt(line)
+            if (match(txt, pat) == gflag)
+                buf(k+MARK) = YES
+            else
+                buf(k+MARK) = NO
+            }
+         for (line=nextln(line2); line!=line1; line=nextln(line)) {
+            k = getind(line)
+            buf(k+MARK) = NO
+            }
+         status = OK
+         }
+      }
+   ckglob = status
+   return
+   end
+#-t-  ckglob                     1071  local   12/01/80  16:25:59
+#-h-  ckp                         389  local   12/01/80  16:26:00
+  ## ckp - check for 'p' after command
+   integer function ckp(lin, i, pflag, status)
+   character lin(MAXLINE)
+   integer i, j, pflag, status
+   integer clower
+
+   j = i
+  if (clower(lin(j)) == clower(PRINT))
+      {
+      j = j + 1
+      pflag = YES
+      }
+   else
+      pflag = NO
+   if (lin(j) == NEWLINE)
+      status = OK
+   else
+      status = ERR
+   ckp = status
+   return
+   end
+#-t-  ckp                         389  local   12/01/80  16:26:00
+#-h-  clrbuf                      104  local   12/01/80  16:26:00
+ ## clrbuf (in memory) - initialize for new file
+ subroutine clrbuf
+ return         #nothing to do
+ end
+#-t-  clrbuf                      104  local   12/01/80  16:26:00
+#-h-  defalt                      321  local   12/01/80  16:26:00
+  ## defalt - set defaulted line numbers
+   integer function defalt(def1, def2, status)
+   integer def1, def2, status
+   include clines
+
+   if (nlines == 0) {
+      line1 = def1
+      line2 = def2
+      }
+   if (line1 > line2 | line1 <= 0)
+      status = ERR
+   else
+      status = OK
+   defalt = status
+   return
+   end
+#-t-  defalt                      321  local   12/01/80  16:26:00
+#-h-  delete                      466  local   12/01/80  16:26:00
+  ## delete - delete lines 'from' through 'to'
+   integer function delete(from, to, status)
+   integer getind, nextln, prevln
+   integer from, k1, k2, status, to, start, stop
+   include clines
+
+   if (from <= 0)
+      status = ERR
+   else {
+      k1 = getind(prevln(from))
+      k2 = getind(nextln(to))
+      lastln = lastln - (to - from + 1)
+      curln = prevln(from)
+      call relink(k1, k2, k1, k2)
+      status = OK
+      }
+   delete = status
+   return
+   end
+#-t-  delete                      466  local   12/01/80  16:26:00
+#-h-  docmd                      3354  local   12/01/80  16:26:00
+  ## docmd - handle all editor commands except globals
+   integer function docmd(lin, i, glob, status)
+   character file(MAXLINE), lin(MAXLINE), sub(MAXPAT)
+   integer append, delete, doprnt, doread, dowrit, move, subst
+   integer ckp, defalt, getfn, getone, getrhs, nextln, optpat, prevln
+   character clower, comand
+   integer gflag, glob, i, line3, pflag, status
+   include cfile
+   include clines
+   include cpat
+
+   pflag = NO      # may be set by d, m, s
+   status = ERR
+   comand = clower(lin(i))      # make sure comparing with lower case
+   if (comand == APPENDCOM) {
+      if (lin(i + 1) == NEWLINE)
+         status = append(line2, glob)
+      }
+   else if (comand == CHANGE) {
+      if (lin(i + 1) == NEWLINE)
+        andif (defalt(curln, curln, status) == OK)
+        andif (delete(line1, line2, status) == OK)
+         status = append(prevln(line1), glob)
+      }
+   else if (comand == DELCOM) {
+      if (ckp(lin, i + 1, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+        andif (delete(line1, line2, status) == OK)
+        andif (nextln(curln) != 0)
+         curln = nextln(curln)
+      }
+   else if (comand == INSERT) {
+      if (lin(i + 1) == NEWLINE)
+         status = append(prevln(line2), glob)
+      }
+   else if (comand == PRINTCUR) {
+      if (ckp(lin, i + 1, pflag, status) == OK) {
+         call putdec(line2, 1)
+         call putc(NEWLINE)
+         }
+      }
+   else if (comand == MOVECOM) {
+      i = i + 1
+      if (getone(lin, i, line3, status) == EOF)
+         status = ERR
+      if (status == OK)
+        andif (ckp(lin, i, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+         status = move(line3)
+      }
+   else if (comand == SUBSTITUTE) {
+      i = i + 1
+      if (optpat(lin, i) == OK)
+        andif (getrhs(lin, i, sub, gflag) == OK)
+        andif (ckp(lin, i + 1, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+         status = subst(sub, gflag)
+      }
+   else if (comand == ENTER) {
+      if (nlines == 0)
+        andif (getfn(lin, i, file) == OK)
+                {
+                call scopy(file, 1, savfil, 1)
+                call clrbuf
+                call setbuf
+                status = doread(0, file, ENTER)
+                }
+      }
+   else if (comand == PRINTFIL) {
+      if (nlines == 0)
+        andif (getfn(lin, i, file) == OK) {
+         call scopy(file, 1, savfil, 1)
+         call putlin(savfil, STDOUT)
+         call putc(NEWLINE)
+         status = OK
+         }
+      }
+   else if (comand == READCOM) {
+      if (getfn(lin, i, file) == OK)
+         status = doread(line2, file, READCOM)
+      }
+   else if (comand == WRITECOM) {
+      if (getfn(lin, i, file) == OK)
+        andif (defalt(1, lastln, status) == OK)
+         status = dowrit(line1, line2, file)
+      }
+   else if (comand == PRINT) {
+      if (lin(i + 1) == NEWLINE)
+        andif (defalt(curln, curln, status) == OK)
+         status = doprnt(line1, line2)
+      }
+   else if (lin(i) == NEWLINE) {
+      if (nlines == 0)
+         line2 = nextln(curln)
+      status = doprnt(line2, line2)
+      }
+   else if (comand == QUIT) {
+      if (lin(i + 1) == NEWLINE & nlines == 0 & glob == NO)
+         status = EOF
+      }
+   # else status is ERR
+   if (status == OK & pflag == YES)
+      status = doprnt(curln, curln)
+   docmd = status
+   return
+   end
+#-t-  docmd                      3354  local   12/01/80  16:26:00
+#-h-  doglob                      766  local   12/01/80  16:26:01
+  ## doglob - do command at lin(i) on all marked lines
+   integer function doglob (lin, i, cursav, status)
+   character lin(MAXLINE)
+   integer docmd, getind, getlst, nextln
+   integer count, i, istart, k, line, status
+   include cbuf
+   include clines
+
+   status = OK
+   count = 0
+   line = line1
+   istart = i
+   repeat {
+      k = getind(line)
+      if (buf(k+MARK) == YES)
+        {
+        buf(k+MARK) = NO
+        curln = line
+         cursav = line
+         i = istart
+         if (getlst(lin, i, status) == OK)
+           andif (docmd(lin, i, YES, status) == OK)
+            count = 0
+         }
+      else {
+         line = nextln(line)
+         count = count + 1
+         }
+      } until (count > lastln | status != OK)
+   doglob = status
+   return
+   end
+#-t-  doglob                      766  local   12/01/80  16:26:01
+#-h-  doprnt                      380  local   12/01/80  16:26:01
+  ## doprnt - print lines 'from' through 'to'
+   integer function doprnt(from, to)
+   integer gettxt
+   integer from, i, j, to
+   include clines
+   include ctxt
+
+   if (from <= 0)
+      doprnt = ERR
+   else {
+      for (i = from; i <= to; i = i + 1) {
+         j = gettxt(i)
+         call putlin(txt, STDOUT)
+         }
+      curln = to
+      doprnt = OK
+      }
+   return
+   end
+#-t-  doprnt                      380  local   12/01/80  16:26:01
+#-h-  doread                      630  local   12/01/80  16:26:02
+ ## doread - read "file" after "line"
+  integer function doread(line, file)
+   character file(MAXLINE), lin(MAXLINE)
+   integer getlin, inject, open
+   integer count, fd, line
+   include clines
+
+   fd = open(file, READ)
+   if (fd == ERR)
+      doread = ERR
+   else
+        {
+        curln = line
+        doread = OK
+        for (count = 0; getlin(lin, fd) != EOF; count = count + 1)
+                {
+                doread = inject(lin)
+                if (doread == ERR)
+                        break
+                }
+      call close(fd)
+          call putdec (count, 1)
+          call putc (NEWLINE)
+      }
+   return
+   end
+#-t-  doread                      630  local   12/01/80  16:26:02
+#-h-  dowrit                      524  local   12/01/80  16:26:02
+  ## dowrit - write 'from' through 'to' into file
+   integer function dowrit(from, to, file)
+   character file(MAXLINE)
+   integer create, gettxt
+   integer fd, from, k, line, to
+   include ctxt
+
+   fd = create(file, WRITE)
+   if (fd == ERR)
+      dowrit = ERR
+   else {
+      for (line = from; line <= to; line = line + 1) {
+         k = gettxt(line)
+         call putlin(txt, fd)
+         }
+      call close(fd)
+          call putdec (to-from+1, 1)
+          call putc (NEWLINE)
+      dowrit = OK
+      }
+   return
+   end
+#-t-  dowrit                      524  local   12/01/80  16:26:02
+#-h-  getfn                       706  local   12/01/80  16:26:02
+  ## getfn - get file name from lin(i)
+   integer function getfn(lin, i, file)
+   character lin(MAXLINE), file(MAXLINE)
+   integer i, j, k
+   include cfile
+
+   getfn = ERR
+   if (lin(i + 1) == BLANK) {
+      j = i + 2      # get new file name
+      call skipbl(lin, j)
+      for (k = 1; lin(j) != NEWLINE; k = k + 1) {
+         file(k) = lin(j)
+         j = j + 1
+         }
+      file(k) = EOS
+      if (k > 1)
+         getfn = OK
+      }
+   else if (lin(i + 1) == NEWLINE & savfil(1) != EOS) {
+      call scopy(savfil, 1, file, 1)   # or old name
+      getfn = OK
+      }
+   # else error
+   if (getfn == OK & savfil(1) == EOS)
+      call scopy(file, 1, savfil, 1)   # save if no old one
+   return
+   end
+#-t-  getfn                       706  local   12/01/80  16:26:02
+#-h-  getind                      196  local   12/01/80  16:26:02
+  ## getind - locate line index in buffer
+   integer function getind(line)
+ integer line, k, j
+ include cbuf
+
+ k = LINE0
+ for (j=0; j<line; j=j+1)
+        k = buf(k+NEXT)
+ getind = k
+ return
+ end
+#-t-  getind                      196  local   12/01/80  16:26:02
+#-h-  getlst                      645  local   12/01/80  16:26:16
+  ## getlst - collect line numbers at lin(i), increment i
+   integer function getlst(lin, i, status)
+   character lin(MAXLINE)
+   integer getone
+   integer i, num, status
+   include clines
+
+   line2 = 0
+   for (nlines = 0; getone(lin, i, num, status) == OK; ) {
+      line1 = line2
+      line2 = num
+      nlines = nlines + 1
+      if (lin(i) != COMMA & lin(i) != SEMICOL)
+         break
+      if (lin(i) == SEMICOL)
+         curln = num
+      i = i + 1
+      }
+   nlines = min(nlines, 2)
+   if (nlines == 0)
+      line2 = curln
+   if (nlines <= 1)
+      line1 = line2
+   if (status != ERR)
+      status = OK
+   getlst = status
+   return
+   end
+#-t-  getlst                      645  local   12/01/80  16:26:16
+#-h-  getnum                      898  local   12/01/80  16:26:16
+  ## getnum - convert one term to line number
+   integer function getnum(lin, i, pnum, status)
+   character lin(MAXLINE)
+   integer ctoi, index, optpat, ptscan
+   integer i, pnum, status
+   include clines
+   include cpat
+   string digits '0123456789'
+
+   getnum = OK
+   if (index(digits, lin(i)) > 0) {
+      pnum = ctoi(lin, i)
+      i = i - 1   # move back; to be advanced at the end
+      }
+   else if (lin(i) == CURLINE)
+      pnum = curln
+   else if (lin(i) == LASTLINE)
+      pnum = lastln
+   else if (lin(i) == SCAN | lin(i) == BACKSCAN) {
+      if (optpat(lin, i) == ERR)   # build the pattern
+         getnum = ERR
+      else if (lin(i) == SCAN)
+         getnum = ptscan(FORWARD, pnum)
+      else
+         getnum = ptscan(BACKWARD, pnum)
+      }
+   else
+      getnum = EOF
+   if (getnum == OK)
+      i = i + 1   # point at next character to be examined
+   status = getnum
+   return
+   end
+#-t-  getnum                      898  local   12/01/80  16:26:16
+#-h-  getone                      988  local   12/01/80  16:26:16
+  ## getone - evaluate one line number expression
+   integer function getone(lin, i, num, status)
+   character lin(MAXLINE)
+   integer getnum
+   integer i, istart, mul, num, pnum, status
+   include clines
+
+   istart = i
+   num = 0
+   call skipbl(lin, i)
+   if (getnum(lin, i, num, status) == OK)   # first term
+      repeat {            # + or - terms
+         call skipbl(lin, i)
+         if (lin(i) != PLUS & lin(i) != MINUS) {
+            status = EOF
+            break
+            }
+         if (lin(i) == PLUS)
+            mul = +1
+         else
+            mul = -1
+         i = i + 1
+         call skipbl(lin, i)
+         if (getnum(lin, i, pnum, status) == OK)
+            num = num + mul * pnum
+         if (status == EOF)
+            status = ERR
+         } until (status != OK)
+   if (num < 0 | num > lastln)
+      status = ERR
+
+   if (status == ERR)
+      getone = ERR
+   else if (i <= istart)
+      getone = EOF
+   else
+      getone = OK
+
+   status = getone
+   return
+   end
+#-t-  getone                      988  local   12/01/80  16:26:16
+#-h-  getrhs                      500  local   12/01/80  16:26:17
+  ## getrhs - get substitution string for 's' command
+   integer function getrhs(lin, i, sub, gflag)
+   character lin(MAXLINE), sub(MAXPAT)
+   integer maksub
+   integer gflag, i
+   character clower
+
+   getrhs = ERR
+   if (lin(i) == EOS)
+      return
+   if (lin(i + 1) == EOS)
+      return
+   i = maksub(lin, i + 1, lin(i), sub)
+   if (i == ERR)
+      return
+   if (clower(lin(i+1)) == GLOBAL)
+      {
+      i = i + 1
+      gflag = YES
+      }
+   else
+      gflag = NO
+   getrhs = OK
+   return
+   end
+#-t-  getrhs                      500  local   12/01/80  16:26:17
+#-h-  gettxt                      231  local   12/01/80  16:26:17
+ ## gettxt (in memory) - locate text for line and make available
+ integer function gettxt(line)
+ integer getind
+ integer line
+ include cbuf
+ include ctxt
+
+ gettxt = getind(line)
+ call icopys (buf, gettxt+TEXT, txt, 1)
+ return
+ end
+#-t-  gettxt                      231  local   12/01/80  16:26:17
+#-h-  icopys                      326  local   12/01/80  16:26:17
+ ## icopys - copy integer string at from(i) to character array to(j)
+    subroutine icopys(from, i, to, j)
+    character to(ARB)
+    integer from(ARB)
+    integer i, j, k1, k2
+
+    k2 = j
+    for (k1 = i; from(k1) != EOS; k1 = k1 + 1) {
+       to(k2) = from(k1)
+       k2 = k2 + 1
+       }
+    to(k2) = EOS
+    return
+    end
+#-t-  icopys                      326  local   12/01/80  16:26:17
+#-h-  inject                     1150  local   12/01/80  16:26:17
+ ## inject (in memory) - put text from lin after curln
+ integer function inject(lin)
+ character lin(MAXLINE)
+ integer addset, getind, nextln
+ integer i, junk, k1, k2, k3
+ include cbuf
+ include clines
+
+ for (i=1; lin(i) != EOS; )
+        {
+        k3 = lastbf
+        lastbf = lastbf + TEXT
+        while (lin(i) != EOS)
+                {
+                buf(lastbf) = lin(i)
+                lastbf = lastbf + 1
+                if (lastbf+1 > MAXBUF)
+                        {
+                        call remark ("file size exceeded.")
+                        return(ERR)
+                        }
+                i = i + 1
+                if (lin(i-1) == NEWLINE)
+                        break
+                }
+        if ( (lastbf+1) > MAXBUF)
+                {
+                call remark ("file size exceeded.")
+                return(ERR)
+                }
+        buf(lastbf) = EOS
+        lastbf = lastbf + 1
+        k1 = getind(curln)
+        k2 = getind(nextln(curln))
+        call relink (k1, k3, k3, k2)
+        call relink (k3, k2, k1, k3)
+        curln = curln + 1
+        lastln = lastln + 1
+        inject = OK
+        }
+ return
+ end
+#-t-  inject                     1150  local   12/01/80  16:26:17
+#-h-  move                        748  local   12/01/80  16:26:18
+  ## move - move line1 through line2 after line 3
+   integer function move(line3)
+   integer getind, nextln, prevln
+   integer k0, k1, k2, k3, k4, k5, line3, delta
+   include clines
+
+   if (line1 <= 0 | (line1 <= line3 & line3 <= line2))
+      move = ERR
+   else {
+      k0 = getind(prevln(line1))
+      k3 = getind(nextln(line2))
+      k1 = getind(line1)
+      k2 = getind(line2)
+      call relink(k0, k3, k0, k3)
+      delta = line2 - line1 + 1
+      if (line3 > line1) {
+         curln = line3
+         line3 = line3 - delta
+         }
+      else
+         curln = line3 + delta
+      k4 = getind(line3)
+      k5 = getind(nextln(line3))
+      call relink(k4, k1, k2, k5)
+      call relink(k2, k5, k4, k1)
+      move = OK
+      }
+   return
+   end
+#-t-  move                        748  local   12/01/80  16:26:18
+#-h-  nextln                      183  local   12/01/80  16:26:18
+  ## nextln - get line after 'line'
+   integer function nextln(line)
+   integer line
+   include clines
+
+   nextln = line + 1
+   if (nextln > lastln)
+      nextln = 0
+   return
+   end
+#-t-  nextln                      183  local   12/01/80  16:26:18
+#-h-  optpat                      546  local   12/01/80  16:26:18
+  ## optpat - make pattern if specified at lin(i)
+   integer function optpat(lin, i)
+   character lin(MAXLINE)
+   integer makpat
+   integer i
+   include cpat
+
+   if (lin(i) == EOS)
+      i = ERR
+   else if (lin(i + 1) == EOS)
+      i = ERR
+   else if (lin(i + 1) == lin(i))   # repeated delimiter
+      i = i + 1         # leave existing pattern alone
+   else
+      i = makpat(lin, i + 1, lin(i), pat)
+   if (pat(1) == EOS)
+      i = ERR
+   if (i == ERR) {
+      pat(1) = EOS
+      optpat = ERR
+      }
+   else
+      optpat = OK
+   return
+   end
+#-t-  optpat                      546  local   12/01/80  16:26:18
+#-h-  prevln                      184  local   12/01/80  16:26:18
+  ## prevln - get line before 'line'
+   integer function prevln(line)
+   integer line
+   include clines
+
+   prevln = line - 1
+   if (prevln < 0)
+      prevln = lastln
+   return
+   end
+#-t-  prevln                      184  local   12/01/80  16:26:18
+#-h-  ptscan                      488  local   12/01/80  16:26:19
+  ## ptscan - scan for next occurrence of pattern
+   integer function ptscan(way, num)
+   integer gettxt, match, nextln, prevln
+   integer k, num, way
+   include clines
+   include cpat
+   include ctxt
+
+   num = curln
+   repeat {
+      if (way == FORWARD)
+         num = nextln(num)
+      else
+         num = prevln(num)
+      k = gettxt(num)
+      if (match(txt, pat) == YES) {
+         ptscan = OK
+         return
+         }
+      } until (num == curln)
+   ptscan = ERR
+   return
+   end
+#-t-  ptscan                      488  local   12/01/80  16:26:19
+#-h-  relink                      165  local   12/01/80  16:26:19
+  ## relink - rewrite two half line links
+   subroutine relink(a, x, y, b)
+   integer a, b, x, y
+   include cbuf
+
+ buf(x+PREV) = a
+ buf(y+NEXT) = b
+   return
+   end
+#-t-  relink                      165  local   12/01/80  16:26:19
+#-h-  setbuf                      277  local   12/01/80  16:26:19
+ ## setbuf (in memory) - initialize line storage buffer
+ subroutine setbuf
+ integer addset
+ integer junk
+ include cbuf
+ include clines
+
+ call relink (LINE0, LINE0, LINE0, LINE0)
+ lastbf = LINE0 + TEXT
+ buf(lastbf) = EOS
+ lastbf = lastbf + 1
+ curln = 0
+ lastln = 0
+ return
+ end
+#-t-  setbuf                      277  local   12/01/80  16:26:19
+#-h-  subst                      1396  local   12/01/80  16:26:19
+  ## subst - substitute "sub" for occurrences of pattern
+   integer function subst(sub, gflag)
+   character new(MAXLINE), sub(MAXPAT)
+   integer addset, amatch, gettxt, inject, conct
+   integer gflag, j, junk, k, lastm, line, m, status, subbed,
+      tagbeg (10), tagend (10)
+   include clines
+   include cpat
+   include ctxt
+
+   subst = ERR
+   if (line1 <= 0)
+      return
+   for (line = line1; line <= line2; line = line + 1) {
+      j = 1
+      subbed = NO
+      junk = gettxt(line)
+      lastm = 0
+      for (k = 1; txt(k) != EOS; ) {
+         if (gflag == YES | subbed == NO)
+            m = amatch(txt, k, pat, tagbeg, tagend)
+         else
+            m = 0
+         if (m > 0 & lastm != m) {   # replace matched text
+            subbed = YES
+            call catsub(txt, tagbeg, tagend, sub, new, j, MAXLINE)
+            lastm = m
+            }
+         if (m == 0 | m == k) {   # no match or null match
+            junk = addset(txt(k), new, j, MAXLINE)
+            k = k + 1
+            }
+         else            # skip matched text
+            k = m
+         }
+      if (subbed == YES) {
+         if (addset(EOS, new, j, MAXLINE) == NO) {
+            subst = ERR
+            break
+            }
+         call delete(line, line, status)   # remembers dot
+         subst = inject(new)
+         if (subst == ERR)
+            break
+         subst = OK
+         }
+      }
+   return
+   end
+#-t-  subst                      1396  local   12/01/80  16:26:19
+#-t-  edin.r                    23884  local   12/01/80  16:29:26
+#-t-  edin                      28615  local   12/01/80  16:30:25
+#-h-  ed                        58250  local   01/09/81  00:33:09
+#-h-  ed.doc                    17387  local   01/09/81  00:32:09
+.bp 1
+.in 0
+.he 'ED (1)'04/21/78'ED (1)'
+.fo ''-#-''
+.fi
+.in 7
+.ti -7
+NAME
+.br
+ed - text editor
+.sp 1
+.ti -7
+SYNOPSIS
+.br
+ed [-] [file]
+.sp 1
+.ti -7
+DESCRIPTION
+.br
+Ed is a text editor.
+If the 'file' argument is given, the file is read into ed's
+buffer so that it can be edited
+and its name is remembered for possible future use.
+Ed operates on a copy of any file it is editing; changes made
+in the copy have no effect on the file until a w (write)
+command is given.
+
+The optional '-' suppresses the printing of line counts by the e (edit),
+r (read), and w (write) commands.
+
+Ed accepts commands from script files as well as a terminal.
+To do this, invoke ed and substitute the script file name for
+the standard input, as follows -
+
+                        ed [file] <script
+
+Commands to ed have a simple and regular structure: zero, one, or two
+line addresses followed by a single character command, possibly
+followed by parameters to the command.  The structure is:
+
+               [line],[line]command <parameters>
+
+The '[line]' specifies a line number or address in the buffer.
+Every command which requires addresses has default addresses,
+so the addresses can often be omitted.
+
+Line addresses may be formed from the following components:
+
+.nf
+
+           17           an integer number
+           .            the current line
+           $            the last line in the buffer
+           .+n          "n" lines past the current line
+           .-n          "n" lines before the current line
+           /pattern/    a forward context search
+           \pattern\    a backward context search
+
+.fi
+Line numbers may be separated by commas or semicolons;
+a semicolon sets the current line to the previous address
+before the next address is interpreted.  This feature can
+be used to determine the starting line for forward and
+backward context searches ("/" and "\").
+
+
+.ne 6
+.ce
+REGULAR EXPRESSIONS
+
+Ed supports a form of regular expression notation for
+specifying patterns in line addresses and in the s command.
+A regular expression specifies a set of strings of characters.
+That is, regular expressions can be created which can
+be used to locate or change
+patterns only at particular positions on a line,
+patterns which contain certain characters plus perhaps others,
+or that match text of indefinite length.
+Regular expressions are constructed as follows:
+
+1.  An ordinary character (not one of those discussed below) is a
+regular expression and matches that character.
+
+2.  A percent "%" at the beginning of a regular expression matches
+the empty string at the beginning of a line.
+
+3.  A dollar sign "$" at the end of a regular expression matches
+the null character at the end of a line.
+
+4.  A question mark "?" matches any character except a newline
+character.
+
+5.  A regular expression followed by an asterisk "*" matches any
+number of adjacent occurrences (including zero) of the regular
+expression it follows.
+
+6.  A string of characters enclosed in square brackets "[ ]" matches
+any character in the string but no others.  If, however, the first
+character of the string is an exclamation point "!" the regular
+expression matches any character
+except
+the characters in the string (and the newline).
+
+7.  The concatenation of regular expressions is a regular expression
+which matches the concatenation of the strings matched by the components
+of the regular expression.
+
+8.  The null regular expression standing alone is equivalent to the
+last regular expression encountered.
+
+9.  Parts of a text pattern may be marked or 'tagged' so that
+pieces of a matched string can be put back selectively or rearranged.
+A text pattern surrounded by braces ( { and } ) is
+remembered and can be
+referred to by '@n', where 'n' is a single digit referring to
+the string remembered by the nth pair of braces.
+For example,
+.sp
+.ce
+s/{???}{?*}/@2@1/
+.sp
+moves a three-character sequence from the beginning of
+a line to the end.
+.sp
+If it is desired to use one of the regular expression metacharacters
+as an ordinary character, that character may be escaped
+by preceding it with an
+atsign "@".
+
+For example, the regular expression
+.sp
+.ce
+/%a?*b/
+.sp
+would search for a line which began with "a" and had a "b" in
+it, possibly with other characters between "a" and "b".
+.bp
+.ce
+COMMANDS
+
+Following is a list of ed commands.  Default addresses are shown
+in parentheses:
+
+(.)a
+.br
+<text>
+.br
+.cc +
+.
++cc .
+.br
+.in +5
+The append command reads the given text and appends it after the addressed
+line.
+'.' is left on the last line input, if there were any, otherwise at
+the addressed line.
+.br
+.in -5
+
+(.)b[+/./-][<screensize>]
+.br
+.in +5
+The browse command is a shorthand command to print out a screenful
+of data.  It has three basic forms, any of which may have a
+number ("screensize") appended to it.
+a
+The default screensize is 23.
+A simple "b" (or b+) prints the the current line and the screenful
+after it.
+A "b-" prints the screen of text preceding (and including) the
+addressed line.
+A "b." prints the screen centered on the addressed line.
+"." is always
+left at the last line printed.  If a screensize is specified, it
+becomes the default screensize for the rest of the editing session or
+until changed again.
+.br
+.in -5
+
+(.,.)c
+.br
+<text>
+.br
+.cc +
+.
++cc .
+.br
+.in +5
+The change command deletes the addressed lines, then accepts input text
+which replaces these lines.  '.' is left at the last line input, if
+there were any, otherwise at the first line not deleted.
+.br
+.in -5
+
+(.,.)d
+.br
+.in +5
+The delete command deletes the addressed lines from the buffer.
+The line originally AFTER the last line deleted becomes the current line;
+however, if the lines deleted were originally at the end, the new last line
+becomes the current line.
+.br
+.in -5
+
+e filename
+.br
+.in +5
+The edit command causes the entire contents of the buffer to be deleted
+and then the named file to be read in.
+'.' is set to the last line of the buffer.
+The number of lines read is typed.
+'Filename' is remembered for possible use as a default file name in
+a subsequent
+r
+or
+w
+command.
+
+.in -5
+f filename
+.br
+.in +5
+If 'filename' isn't given, the command prints the currently
+remembered file name.
+If 'filename' is given, the currently remembered file name is
+changed to 'filename'.
+.br
+.in -5
+
+(1,$)g/regular expression/command
+.br
+.in +5
+In the global command, the given command is executed for every
+line which matches the given regular expression.
+Multiple commands may be executed by placing each on a preceding
+line and terminated each command except the last with an
+atsign '@'.
+.br
+.in -5
+
+(.)i
+.br
+<text>
+.br
+.cc +
+.
++cc .
+.br
+.in +5
+The insert command inserts the given text BEFORE the addressed line.
+'.' is left at the last line input, or if there were none, at the
+addressed line.
+This command differs from the
+"a"
+command only in the placement of text.
+.br
+.in -5
+
+(.,.)k<address>
+.br
+.in +5
+The kopy command copies the addressed lines to the position after
+the line
+specified by
+<address>.
+The last of the copied lines becomes the current line.
+.br
+.in -5
+
+(.,.)m<address>
+.br
+.in +5
+The move command repositions the addressed lines after the line
+specified by
+<address>.
+The last of the moved lines becomes the current line.
+.br
+.in -5
+
+(.,.)p
+.br
+.in +5
+The print command prints the addressed lines.  '.' is left at the
+last line printed.
+The
+p
+command may be placed on the same line after any other command
+to cause printing of the last line affected by the command.
+.br
+.in -5
+
+q
+.br
+.in +5
+The quit command causes ed to exit.
+If the file hasn't been written since it was changed, the
+user is reminded to do so.
+.br
+.in -5
+
+(.)r filename
+.br
+.in +5
+The read command reads in the given file after the addressed line.
+If no file name is given, the remembered file name is used (see
+e
+and
+f
+commands).
+The remembered file name is not changed.
+Address '0' is legal for this command and causes the file to be
+read in at the beginning of the buffer.
+If the read is successful, the number of lines read is typed.
+'.' is left at the last line read in from the file.
+.br
+.in -5
+
+(.,.)s/regular expression/replacement/       or,
+.br
+(.,.)s/regular expression/replacement/g
+.br
+.in +5
+The substitute command searches each addressed line for an occurrence
+of the specified regular expression.
+On each line in which a match is found, the first occurrence of the
+expression is replaced by the replacement specified.
+If the global replacement indicator
+g
+appears after the command, all occurrences of the regular
+expression are replaced.
+Any character other than space or newline may be used instead of
+the slash '/' to delimit the regular expression and replacement.
+A question mark '?' is printed if the substitution fails on all
+addressed lines.
+'.' is left at the last line substituted.
+If the regular expression is not specified (e.g. s//pat/),
+the last regular expression given is used.
+
+An ampersand '&' appearing in the replacement is replaced by
+the string matching the regular expression.
+(The special meaning of '&' in this context may be suppressed by
+preceding it by '@'.)
+
+Lines may be split or merged by using the symbol '@n' to stand
+for the newline character at the end of a line.
+.br
+.in -5
+
+
+(1,$)w filename
+.br
+.in +5
+The write command writes the addressed lines onto the given file.
+If the file does not exist, it is created.
+The remembered file name is
+not
+changed.
+If no file name is given, the remembered file name is used (see
+the
+e
+and
+f
+commands).
+'.' is left unchanged.
+If the command is successful, the number of lines written is typed.
+.br
+.in -5
+
+(1,$)x/regular expression/command
+.br
+.in +5
+The except command is the same as the global command except that the
+command is executed for every line
+except
+those matching the regular expression.
+
+.in -5
+(.)=
+.br
+.in +5
+The line number of the addressed line is typed.
+'.' is left unchanged.
+.br
+.in -5
+
+# comment
+.br
+.in +5
+The remainder of the line after the "#" is a comment and ignored by
+the editor.  This allows ed scripts to be commented for future
+enlightenment.
+.br
+.in -5
+
+@shell command
+.br
+.in +5
+The remainder of the line after the "@" is sent to the shell as a
+command.  If there is nothing else on the line but a bare "@", the
+shell will be spawned, allowing a number of commands to be
+performed; when that shell quits, the terminal is returned to the
+editor.  "." is left unchanged.
+.br
+.in -5
+
+(.+1)<carriage return>
+.br
+.in +5
+An address alone on a line causes the addressed line to be printed.
+A blank line alone is equivalent to '.+1' and thus is useful
+for stepping through text.
+.in -5
+.br
+$n
+.br
+.in +5
+Several temporary buffers (i.e. files) are available for
+writing into and reading from.
+The buffers are referred to as $1, $2, ...$n (where n is
+determined by the MAXTBUFS definition in the source code).
+These buffers can be used wherever a normal file name may appear.
+For example,
+.br
+.ce 2
+1,10w $1
+r $1
+.fi
+If the shell has been implemented, these buffers are also available
+to the shell via:
+.br
+.ce
+@tool $1 $2 ...
+.br
+.in -5
+.sp 1
+.ti -7
+FILES
+.br
+A temporary file is used to hold
+the text being edited ("eds")
+.sp
+Scratch files named edn, where 1 <= n <= MAXTBUFS, are created
+for temporary buffers.
+.sp 1
+.ti -7
+SEE ALSO
+.br
+.nf
+sedit
+The "edit" primer
+The Unix command "ed" in the Unix manual
+"A Tutorial Introduction to the ED Text Editor" by B. W. Kernighan
+Kernighan and Plauger's "Software Tools", pages 163-217
+"Edit is for Beginners" by David A. Mosher (available from
+             UC Berkeley Computer Science Library)
+"Edit:  A Tutorial" (also available from the
+             UC Berkeley Computer Science Library)
+.fi
+.sp 1
+.ne 5
+.ti -7
+DIAGNOSTICS
+.br
+file size exceeded
+.br
+.in +5
+printed whenever the maximum number of lines allowed has been
+exceeded.
+The number of lines allowed is determined by the MAXBUF
+definition in the source code.
+.in -5
+.sp
+A message is printed whenever the user attempts to quit without
+writing a file that was changed.
+The user must retype the command as a verification.
+.sp
+The error message "?" is printed whenever an edit command
+fails or is not understood.
+.sp 1
+.ti -7
+AUTHORS
+.br
+Original code by Kernighan and Plauger with modifications
+by Debbie Scherrer, Dennis Hall and Joe Sventek
+(Lawrence Berkeley Laboratory)
+.sp 1
+.ti -7
+CHANGES
+.br
+This editor differs from the one originally provided in
+.ul
+Software Tools
+in the following ways:
+.sp
+.in +5
+Both upper and lower case commands are recognized.
+.sp
+The primitive 'note' has been included to allow random access
+to files on systems where a character count alone would not
+be sufficient.
+.sp
+The storage of line pointers in the line buffer has been condensed
+and recovery of space used by deleted pointers has been implemented.
+Searching of the line pointer array has been optimized
+a bit.
+.sp
+The user is reminded to rewrite a file if necessary before he quits.
+.sp
+The "b", "k", "@tool" commands have been included,
+as well as temporary buffers and
+comments.
+.sp
+Multiple commands to be executed upon a single global search have been
+added.
+.sp
+Tagged patterns have been added.
+.sp 1
+.in -5
+.ti -7
+BUGS/DEFICIENCIES
+.br
+There is a limit to the number of lines in files being edited.
+
+When a global search and substitute combination fails, the
+entire global search stops.
+.sp
+There are several discrepancies between this editor and Unix's ed.
+These include:
+
+.in +5
+1.  Unix uses 'v' instead of 'x' for the except command.
+
+2.  Unix uses a caret (^) instead of percent (%) for
+the beginning-of-line character.
+
+3.  Unix uses '.' instead of '?' to indicate a match of any character.
+
+4.  Unix uses a caret (^) instead of an exclamation mark (!) to
+indicate exclusion of a
+character class.
+
+5.  Unix uses backslash (\) instead of atsign (@) for the
+escape character.
+
+6.  Unix uses a questions mark (?) instead of a backslash (\)
+to delimit a backward search pattern.
+
+7.  The Unix 'r' command uses the last line of the file, instead
+of the current line, as the default address.
+
+8.  The Unix editor prints the number of characters, rather than
+lines read or written when dealing with files.
+.in -5
+.sp
+Problems sometimes occur when removing or inserting NEWLINE
+characters (via @n), especially in global commands.
+.sp 2
+.ne 19
+.in 0
+.ce
+SUMMARY OF SPECIAL CHARACTERS
+
+.fi
+The following are special characters used by the editor:
+
+ Character       Usage
+ ---------       -----
+.br
+    ?            Matches any character (except newline)
+.br
+    %            Indicates beginning of line
+.br
+    $            Indicates end of line or end of file
+.br
+    [...]        Character class
+                 (any one of these characters)
+.br
+    [!...]       Negated character class
+                 (any character except these)
+.br
+    *            Closure (zero or more occurences of
+                 previous pattern)
+    {...}        Tagged pattern
+.br
+    @            Escaped character (e.g. @%, @[, @*)
+.br
+    &            Ditto, i.e. whatever was matched
+.br
+    c1-c2        Range of characters between c1 and c2
+.br
+    @n           Specifies the newline mark at the end of a line
+.br
+    @t           Specifies a tab character
+.bp
+.in 0
+.ce
+COMMAND SUMMARY
+.sp
+.in 5
+.nf
+.ti -5
+Addresses:
+.br
+ 17      a decimal number
+ .       the "current" line
+ $       the last line of the file
+ /pat/   search forward for line containing pat
+ \pat\   search backward for line containing pat
+ line+n  n lines forward from line
+ line-n  n lines backward from line
+.sp
+.ti -5
+Defaults:
+.br
+ (.)     use current line
+ (.+1)   use the next line
+ (.,.)   use current line for both line numbers
+ (1,$)   use all lines
+.sp
+.ti -5
+Commands:
+.br
+ (.)     a               append text after line
+                         (text follows)
+ (.,.n)  b n             browse at next "n" number of lines (default
+                         n is 22).  If n is negative, print last n
+                         lines before current line.  If "b." is
+                         specified, print n lines with current
+                         line in center of screen.
+ (.,.)   c               change text (text follows)
+ (.,.)   d               delete text
+         e file          discard current text, enter file,
+                         remember file name
+         f               print file name
+         f file          remember file name
+ (.)     i               insert text before line (text follows)
+ (.,.)   k line3         copy text to after line3
+ (.,.)   m line3         move text to after line3
+ (.,.)   p               print text (can be appended to other commands)
+         q               quit
+ (.)     r file          read file, appending after line
+ (.,.)   s/pat/new/gp    substitute new for leftmost pat
+                         (g implies all occurrences)
+ (1,$)   w file          write file, leave current text unaltered
+                         (if "file" isn't given, write to current
+                         filename)
+ (.)     =p              print line number, current line
+ (.+1)   <CR>            print next line
+ (1,$)   g/pat/command   do command on lines containing pat
+                         (except a, c, i, q commands)
+ (1,$)   x/pat/command   do command on lines not containing pat
+                         (except a, c, i, q commands)
+         # .....         comment
+         @command        spawn the shell and execute "command"
+         $n              write to/read from temporary buffer "n"
+.in 0
+.fi
+#-t-  ed.doc                    17387  local   01/09/81  00:32:09
+#-h-  cbuf                        327  local   12/01/80  16:45:35
+ # /cbuf/ common block
+ # put on a file called 'cbuf'
+ # Used only by the editor
+
+ common /cbuf/ buf(MAXBUF), lastbf, free 
+ integer buf, lastbf, free   
+
+ #buf(k+0)     PREV    previous line
+ #buf(k+1)     NEXT    next line
+ #buf(k+2)     MARK    mark for global commands
+ #buf(k+3)     SEEDADR where line is on scratch file
+
+#-t-  cbuf                        327  local   12/01/80  16:45:35
+#-h-  cfile                       168  local   12/01/80  16:45:35
+ ## cfile common block - for editor
+ # put on a file named 'cfile'
+ # Used only by the editor
+
+ common /cfile/  savfil(MAXLINE)
+ character savfil #remembered file name
+#-t-  cfile                       168  local   12/01/80  16:45:35
+#-h-  clines                      819  local   12/01/80  16:45:35
+ # /clines/ - common block for editor; holds line flags
+ # put on a file called 'clines'
+ # Used only by the editor
+
+ common /clines/ line1, line2, nlines, curln, lastln, print, cursav,
+   oldlin, oldndx, ifmod, notify
+   integer line1   # first line number
+   integer line2   # second line number
+   integer nlines  # number of line numbers specified
+   integer curln   # current line: value of dot
+   integer lastln  # last line: value of $
+   integer print   # flag to cause/suppress printing of line count
+   integer cursav  # value of current line before new command
+   integer oldlin  # last line number used by getind
+   integer oldndx  # last index returned by getind
+   integer ifmod   # if buffer has been modified since last write
+   integer notify  # if user has been notified of no write since last change
+#-t-  clines                      819  local   12/01/80  16:45:35
+#-h-  cpat                        153  local   12/01/80  16:45:36
+ # /cpat/ - common block for editor
+ # put on a file named 'cpat'
+ # Used only by the editor
+
+ common /cpat/ pat(MAXPAT)
+   character pat      # pattern
+#-t-  cpat                        153  local   12/01/80  16:45:36
+#-h-  cscrat                      494  local   12/01/80  16:45:36
+ # /cscrat/ - common block for editor; holds scratch file info
+ # put on a file called 'cscrat'
+ # Used only by the editor
+
+ common /cscrat/ scr, wscr, scrend(2), scrfil(FILENAMESIZE)
+    integer scr      # scratch file id
+    integer wscr     # scratch file id for WRITE access (if file
+                     # needs to be opened twice cause READWRITE
+                     # hasn't been implemented
+    integer scrend   # end of info on scratch file
+    character scrfil # name of scratch file
+#-t-  cscrat                      494  local   12/01/80  16:45:36
+#-h-  ctbufs                      380  local   12/01/80  16:45:36
+ ## common block used to hold temporary buffers for editor
+ #  put on a file called "ctbufs"
+ #  used only by the editor
+
+ common / ctbufs / edtbuf(FILENAMESIZE, MAXTBUFS),
+                   bufid(3, MAXTBUFS)
+
+ character edtbuf # name of scratch files for temp buffs
+ character bufid        # buffer name associated with each buff
+                        #  (e.g. $1, $2, etc.)
+#-t-  ctbufs                      380  local   12/01/80  16:45:36
+#-h-  ctxt                        181  local   12/01/80  16:45:36
+ # /ctxt/ - common block for editor
+ # put on a file called 'ctxt'
+ # Used only by the editor
+
+ common /ctxt/ txt(MAXLINE)
+   character txt      # text line for matching and output
+#-t-  ctxt                        181  local   12/01/80  16:45:36
+#-h-  ed.r                      37153  local   12/01/80  16:45:37
+#-h-  ed                         3127  local   12/01/80  16:35:19
+  ## ed - driver subroutine for editor
+
+
+
+ #        include ratdef
+ #
+ # definitions for editor
+ #
+ #  If you haven't implemented READWRITE access (but are able to
+ #  open the same file at READ and at WRITE access, set the
+ #  following definition:
+ #
+ #        define(NO_READWRITE,)
+
+ #  If you have implemented "spawn", set the following definition:
+ #           define(SPAWN_OK,)
+
+  define(GLOBAL,LETG)
+  define(PRINT,LETP)
+  define(MARKED,LETY)
+  define(NOMARK,LETN)
+  define(BACKWARD,-1)
+  define(EXCLUDE,LETX)
+  define(APPENDCOM,LETA)
+  define(CHANGE,LETC)
+  define(DELCOM,LETD)
+  define(ENTER,LETE)
+  define(PRINTFIL,LETF)
+  define(READCOM,LETR)
+  define(WRITECOM,LETW)
+  define(INSERT,LETI)
+  define(PRINTCUR,EQUALS)
+  define(MOVECOM,LETM)
+  define(QUIT,LETQ)
+  define(SUBSTITUTE,LETS)
+  define(CURLINE,PERIOD)
+  define(LASTLINE,DOLLAR)
+  define(SCAN,SLASH)
+  define(BACKSCAN,BACKSLASH)
+  define(NOSTATUS,1)
+  define(LINE0,1)
+  define(PREV,0)
+  define(NEXT,1)
+  define(MARK,2)
+  define(TEXT,3)
+  define(MAXBUF,4008)           #size of line pointer array
+                                # (includes line 0 and line $)
+                                #(each line needs 4 words)
+  define(SEEKADR,3)
+  define(BUFENT,4)
+
+  define(BROWSE,LETB)
+  define(SCREENSIZE,22)
+  define(KOPYCOM,LETK)
+  define(SPAWNCOM,ATSIGN)
+  define(COMMENT,SHARP)
+  define(FORWARD,PLUS)
+  define(CENTER,PERIOD)
+  define(BACKWARD,MINUS)
+  define(MAXTBUFS,4)
+
+
+
+ DRIVER(ed)
+   character lin(MAXLINE)
+   character arg (MAXLINE)
+   integer ckglob, docmd, doglob, doread, getarg, getlin, getlst
+   integer i, status, clrbuf
+   include cfile
+   include clines
+   include cpat
+   include cbuf
+
+ #Initialize flag for printing/suppression of line counts
+   print = YES
+
+   # Initialize variables and buffers
+   call inited
+   call setbuf
+   pat(1) = EOS
+   savfil(1) = EOS
+   oldndx = ERR
+   oldlin = -2
+
+   call query ("usage:  ed [-] file.")
+
+  #Pick up file name and possible flag(s)
+  for (i=1; getarg(i, arg, MAXLINE) != EOF; i=i+1)
+     {
+     if (arg(1) == MINUS & arg(2) == EOS)
+          print = NO
+    else
+         {
+         call scopy (arg, 1, savfil, 1)
+         if (doread (0, savfil, ENTER) == ERR)
+                call remark ('?.')
+         }
+     }
+
+    repeat
+        {
+        status = getlin(lin, STDIN)
+        if (status == EOF)      # MUST clear buffer on EOF of input file
+            {
+            status = clrbuf(EOF)
+            break
+            }
+        else if (status != ERR)
+            {
+            i = 1
+            cursav = curln
+            if (getlst(lin, i, status) == OK) {
+               if (ckglob(lin, i, status) == OK)
+                  status = doglob(lin, i, cursav, status)
+               else if (status != ERR)
+                  status = docmd(lin, i, NO, status)
+         # else error, do nothing
+               }
+            }
+      if (status == ERR) {
+         call remark('?.')
+         curln = cursav
+         }
+      else if (status == EOF)
+         if (clrbuf(QUIT) == OK)    # will return ERR if changes since last w
+            break
+      # else OK, loop
+      }
+   call ended
+ DRETURN
+   end
+#-t-  ed                         3127  local   12/01/80  16:35:19
+#-h-  append                      525  local   12/01/80  16:35:21
+  ## append - append lines after 'line'
+   integer function append(line, glob)
+   character lin(MAXLINE)
+   integer getlin, inject
+   integer line, glob
+   include clines
+
+   if (glob == YES)
+      append = ERR
+   else {
+      curln = line
+      for (append = NOSTATUS; append == NOSTATUS; )
+         if (getlin(lin, STDIN) == EOF)
+            append = EOF
+         else if (lin(1) == PERIOD & lin(2) == NEWLINE)
+            append = OK
+         else if (inject(lin) == ERR)
+            append = ERR
+      }
+   return
+   end
+#-t-  append                      525  local   12/01/80  16:35:21
+#-h-  brows                       799  local   12/01/80  16:35:21
+ integer function brows(line, lin, i)
+
+ character lin(ARB), direc
+ integer line, i, screen, curscr, ctoi, lin1, lin2
+ integer doprnt
+
+ include clines
+
+ data screen, curscr/SCREENSIZE, SCREENSIZE/
+
+ if (lin(i) == NEWLINE)
+    {
+    direc = FORWARD
+    screen = curscr
+    }
+ else
+    {
+    if (lin(i) == FORWARD | lin(i) == CENTER | lin(i) == BACKWARD)
+        {
+        direc = lin(i)
+        i = i + 1
+        }
+    else
+        direc = FORWARD
+    screen = ctoi(lin, i) - 1
+    if (screen <= 0)
+        screen = curscr
+    else
+        curscr = screen
+    }
+ if (direc == FORWARD)
+    lin1 = line
+ else if (direc == CENTER)
+    lin1 = line - (screen / 2)
+ else
+    lin1 = line - screen
+ lin2 = lin1 + screen
+ lin1 = max(1, lin1)
+ lin2 = min(lin2, lastln)
+ brows = doprnt(lin1, lin2)
+
+ return
+ end
+#-t-  brows                       799  local   12/01/80  16:35:21
+#-h-  ckglob                     1090  local   12/01/80  16:35:22
+  ## ckglob - if global prefix, mark lines to be affected
+   integer function ckglob(lin, i, status)
+   character lin(MAXLINE)
+   integer defalt, getind, gettxt, match, nextln, optpat
+   integer gflag, i, k, line, status
+   character clower
+   include cbuf
+   include clines
+   include cpat
+   include ctxt
+
+   if (clower(lin(i)) != GLOBAL & clower(lin(i)) != EXCLUDE)
+      status = EOF
+   else {
+      if (clower(lin(i)) == GLOBAL)
+         gflag = YES
+      else
+         gflag = NO
+      i = i + 1
+      if (optpat(lin, i) == ERR | defalt(1, lastln, status) == ERR)
+         status = ERR
+      else {
+         i = i + 1
+         for (line = line1; line <= line2; line = line + 1) {
+            k = gettxt(line)
+            if (match(txt, pat) == gflag)
+               call setb (k, MARK, YES)
+            else
+               call setb (k, MARK, NO)
+            }
+         for (line=nextln(line2); line!=line1; line=nextln(line)) {
+            k = getind(line)
+            call setb (k, MARK, NO)
+            }
+         status = OK
+         }
+      }
+   ckglob = status
+   return
+   end
+#-t-  ckglob                     1090  local   12/01/80  16:35:22
+#-h-  ckp                         389  local   12/01/80  16:35:22
+  ## ckp - check for 'p' after command
+   integer function ckp(lin, i, pflag, status)
+   character lin(MAXLINE)
+   integer i, j, pflag, status
+   integer clower
+
+   j = i
+  if (clower(lin(j)) == clower(PRINT))
+      {
+      j = j + 1
+      pflag = YES
+      }
+   else
+      pflag = NO
+   if (lin(j) == NEWLINE)
+      status = OK
+   else
+      status = ERR
+   ckp = status
+   return
+   end
+#-t-  ckp                         389  local   12/01/80  16:35:22
+#-h-  clrbuf                      528  local   12/01/80  16:35:22
+  ## clrbuf - dispose of editor scratch file
+    integer function clrbuf(comand)
+
+    character comand
+
+    include cscrat
+    include clines
+
+    if (comand == QUIT & ifmod == YES & notify == NO)  # no w since last change
+        {
+        notify = YES
+ call remark("NO WRITE SINCE LAST CHANGE.  RETYPE COMMAND IF YOU MEAN IT.")
+        clrbuf = ERR
+        }
+    else
+        {
+        call close(scr)
+        ifdef(NO_READWRITE, call close(wscr) )
+        call remove(scrfil)
+        clrbuf = OK
+        }
+    return
+    end
+#-t-  clrbuf                      528  local   12/01/80  16:35:22
+#-h-  conct                       494  local   12/01/80  16:35:23
+ ## conct - concat line to next line if necessary
+ integer function conct (nbr, lin)
+
+ integer nbr, i, gettxt, junk
+ character lin(ARB)
+
+ include clines
+ include ctxt
+
+ conct = OK
+ for (i=1; lin(i)!=EOS; i=i+1)  #check for lack of NEWLINE
+        if (lin(i) == NEWLINE)
+                return
+ if (nbr+1 > lastln)            #no next line
+        {
+        conct = ERR
+        return
+        }
+
+ junk = gettxt (nbr+1)
+ call scopy (txt, 1, lin, i)
+ call delete (nbr+1, nbr+1, junk)
+ return
+ end
+#-t-  conct                       494  local   12/01/80  16:35:23
+#-h-  defalt                      321  local   12/01/80  16:35:24
+  ## defalt - set defaulted line numbers
+   integer function defalt(def1, def2, status)
+   integer def1, def2, status
+   include clines
+
+   if (nlines == 0) {
+      line1 = def1
+      line2 = def2
+      }
+   if (line1 > line2 | line1 <= 0)
+      status = ERR
+   else
+      status = OK
+   defalt = status
+   return
+   end
+#-t-  defalt                      321  local   12/01/80  16:35:24
+#-h-  delete                      548  local   12/01/80  16:35:24
+  ## delete - delete lines 'from' through 'to'
+   integer function delete(from, to, status)
+   integer getind, nextln, prevln
+   integer from, k1, k2, status, to, start, stop
+   include clines
+
+   if (from <= 0)
+      status = ERR
+   else {
+      k1 = getind(prevln(from))
+      k2 = getind(nextln(to))
+      start = getind(from)
+      stop = getind(to)
+      lastln = lastln - (to - from + 1)
+      curln = prevln(from)
+      call relink(k1, k2, k1, k2)
+      call ptfndx(start, stop)
+      status = OK
+      }
+   delete = status
+   return
+   end
+#-t-  delete                      548  local   12/01/80  16:35:24
+#-h-  docmd                      4140  local   12/01/80  16:35:25
+  ## docmd - handle all editor commands except globals
+   integer function docmd(lin, i, glob, status)
+   character file(MAXLINE), lin(MAXLINE), sub(MAXPAT)
+   integer append, delete, doprnt, doread, dowrit, lmove, subst
+   integer ckp, defalt, getfn, getone, getrhs, nextln, optpat, prevln
+   character clower, comand
+   integer gflag, glob, i, line3, pflag, status, kopy, dospwn, brows
+   integer clrbuf
+   include cfile
+   include clines
+   include cpat
+
+   pflag = NO      # may be set by d, m, s
+   status = ERR
+   comand = clower(lin(i))      # make sure comparing with lower case
+   if (comand == APPENDCOM) {
+      if (lin(i + 1) == NEWLINE)
+         status = append(line2, glob)
+      }
+   else if (comand == CHANGE) {
+      if (lin(i + 1) == NEWLINE)
+        andif (defalt(curln, curln, status) == OK)
+        andif (delete(line1, line2, status) == OK)
+         status = append(prevln(line1), glob)
+      }
+   else if (comand == DELCOM) {
+      if (ckp(lin, i + 1, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+        andif (delete(line1, line2, status) == OK)
+        andif (nextln(curln) != 0)
+         curln = nextln(curln)
+      }
+   else if (comand == INSERT) {
+      if (lin(i + 1) == NEWLINE)
+         status = append(prevln(line2), glob)
+      }
+   else if (comand == PRINTCUR) {
+      if (ckp(lin, i + 1, pflag, status) == OK) {
+         call putdec(line2, 1)
+         call putc(NEWLINE)
+         }
+      }
+   else if (comand == MOVECOM) {
+      i = i + 1
+      if (getone(lin, i, line3, status) == EOF)
+         status = ERR
+      if (status == OK)
+        andif (ckp(lin, i, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+         status = lmove(line3)
+      }
+    else if (comand == KOPYCOM)
+        {
+        i = i + 1
+        if (getone(lin, i, line3, status) == EOF)
+            status = ERR
+        if (status == OK)
+            andif (ckp(lin, i, pflag, status) == OK)
+            andif (defalt(curln, curln, status) == OK)
+                status = kopy(line3)
+        }
+   else if (comand == SUBSTITUTE) {
+      i = i + 1
+      if (optpat(lin, i) == OK)
+        andif (getrhs(lin, i, sub, gflag) == OK)
+        andif (ckp(lin, i + 1, pflag, status) == OK)
+        andif (defalt(curln, curln, status) == OK)
+         status = subst(sub, gflag)
+      }
+    ifdef(SPAWN_OK,
+        else if (comand == SPAWNCOM)
+                {
+                i = i + 1
+                status = dospwn(lin, i)
+                }
+        )
+   else if (comand == ENTER) {
+      if (nlines == 0)
+        andif (getfn(lin, i, file) == OK)
+           if (clrbuf(QUIT) == OK)
+                {
+                call scopy(file, 1, savfil, 1)
+                call setbuf
+                status = doread(0, file, ENTER)
+                }
+           else
+                status = OK
+      }
+   else if (comand == PRINTFIL) {
+      if (nlines == 0)
+        andif (getfn(lin, i, file) == OK) {
+         call scopy(file, 1, savfil, 1)
+         call putlin(savfil, STDOUT)
+         call putc(NEWLINE)
+         status = OK
+         }
+      }
+   else if (comand == READCOM) {
+      if (getfn(lin, i, file) == OK)
+         status = doread(line2, file, READCOM)
+      }
+   else if (comand == WRITECOM) {
+      if (getfn(lin, i, file) == OK)
+        andif (defalt(1, lastln, status) == OK)
+         status = dowrit(line1, line2, file)
+      }
+   else if (comand == PRINT) {
+      if (lin(i + 1) == NEWLINE)
+        andif (defalt(curln, curln, status) == OK)
+         status = doprnt(line1, line2)
+      }
+   else if (comand == BROWSE)
+        {
+        i = i + 1
+        if (defalt(curln, curln, status) == OK)
+            status = brows(line2, lin, i)
+        }
+   else if (comand == COMMENT)
+        status = OK
+   else if (lin(i) == NEWLINE) {
+      if (nlines == 0)
+         line2 = nextln(curln)
+      status = doprnt(line2, line2)
+      }
+   else if (comand == QUIT) {
+      if (lin(i + 1) == NEWLINE & nlines == 0 & glob == NO)
+         status = EOF
+      }
+   # else status is ERR
+   if (status == OK & pflag == YES)
+      status = doprnt(curln, curln)
+   docmd = status
+   return
+   end
+#-t-  docmd                      4140  local   12/01/80  16:35:25
+#-h-  doglob                     1242  local   12/01/80  16:35:26
+  ## doglob - do command at lin(i) on all marked lines
+   integer function doglob(lin, i, status)
+   character lin(MAXLINE)
+   integer docmd, getind, getlst, nextln, getlin
+   integer value(2)
+   integer count, i, istart, k, line, status, last, junk
+   include cbuf
+   include clines
+
+   for (last = length(lin); lin(last - 1) == ATSIGN; last = length(lin))
+        {
+        lin(last - 1) = NEWLINE
+        junk = getlin(lin(last),STDIN)
+        }
+   status = OK
+   count = 0
+   line = line1
+   istart = i
+   repeat {
+      k = getind(line)
+      call getb(k, MARK, value)
+      if (value(1) == YES) {
+         call setb(k, MARK, NO)
+         cursav = line
+         i = istart
+         repeat
+                {
+                curln = line
+                 if (getlst(lin, i, status) == OK)
+                   andif (docmd(lin, i, YES, status) == OK)
+                    count = 0
+                 while(lin(i) != NEWLINE)
+                        i = i + 1
+                 i = i + 1
+                 if (lin(i) == EOS)
+                        break
+                }
+         }
+      else {
+         line = nextln(line)
+         count = count + 1
+         }
+      } until (count > lastln | status != OK)
+   doglob = status
+   return
+   end
+#-t-  doglob                     1242  local   12/01/80  16:35:26
+#-h-  doprnt                      380  local   12/01/80  16:35:27
+  ## doprnt - print lines 'from' through 'to'
+   integer function doprnt(from, to)
+   integer gettxt
+   integer from, i, j, to
+   include clines
+   include ctxt
+
+   if (from <= 0)
+      doprnt = ERR
+   else {
+      for (i = from; i <= to; i = i + 1) {
+         j = gettxt(i)
+         call putlin(txt, STDOUT)
+         }
+      curln = to
+      doprnt = OK
+      }
+   return
+   end
+#-t-  doprnt                      380  local   12/01/80  16:35:27
+#-h-  doread                      903  local   12/01/80  16:35:27
+  ## doread - read 'file' into scratch after 'line'
+   integer function doread(line, file, comand)
+   character file(MAXLINE), lin(MAXLINE), comand
+   integer getlin, inject, open, access
+   integer count, fd, line
+   integer look4
+   include clines
+   include cfile
+
+   access = READ
+   fd = open(file, access)
+   if (fd == ERR)
+      doread = ERR
+   else
+        {
+        curln = line
+        doread = OK
+        for (count = 0; getlin(lin, fd) != EOF; count = count + 1)
+                {
+                doread = inject(lin)
+                if (doread == ERR)
+                        break
+                }
+      call close(fd)
+      if (print == YES)
+          {
+          call putdec (count, 1)
+          call putc (NEWLINE)
+          }
+      if (comand == ENTER)      # reset changes since last write switches
+        {
+        ifmod = NO
+        notify = NO
+        }
+      }
+   return
+   end
+#-t-  doread                      903  local   12/01/80  16:35:27
+#-h-  dospwn                     1136  local   12/01/80  16:35:28
+#       spawns a shell command from within the editor
+#
+ ifdef(SPAWN_OK,
+ integer function dospwn(lin, i)
+
+ character lin(ARB), proces(FILENAMESIZE), args(ARGBUFSIZE), sh(3),
+           desc(PIDSIZE)
+ integer i, length, j, spawn, init, k, int, create
+
+ include ctbufs
+
+ data init/YES/
+ data sh/LETS, LETH, EOS/
+ )
+
+ ifdef(SPAWN_OK,
+ if (init == YES)
+    {
+    call usrbin(proces)
+    j = length(proces) + 1
+    call scopy(sh, 1, proces, j)
+    k = 1
+ )
+ ifdef(SPAWN_OK,
+    for (j=1; j <= MAXTBUFS; j=j+1)
+        {
+        call stcopy(edtbuf(1,j), 1, args, k)
+        args(k) = BLANK
+        k = k + 1
+        }
+    args(k) = EOS
+    init = NO
+    }
+    )
+ ifdef(SPAWN_OK,
+ call skipbl(lin, i)            # extra blanks not necessary
+ if (lin(i) == NEWLINE | lin(i) == EOS)         # no shell command
+    dospwn = spawn(proces, EOS, desc, WAIT)
+ )
+ ifdef(SPAWN_OK,
+ else
+    {
+    int = create(edtbuf(1,1), WRITE)
+    if (int == ERR)
+        dospwn = ERR
+  )
+  ifdef(SPAWN_OK,
+    else
+        {
+        call putlin(lin(i), int)
+        call close(int)
+        dospwn = spawn(proces, args, desc, WAIT)
+        }
+    }
+
+ return
+ end
+ )
+#-t-  dospwn                     1136  local   12/01/80  16:35:28
+#-h-  dowrit                      786  local   12/01/80  16:35:29
+  ## dowrit - write 'from' through 'to' into file
+   integer function dowrit(from, to, file)
+   character file(MAXLINE), lin(FILENAMESIZE)
+   integer create, gettxt
+   integer fd, from, k, line, to
+   integer look4
+   include ctxt
+   include clines
+   include cfile
+
+   if (look4(file, lin) != YES)
+       call scopy(file, 1, lin, 1)
+   fd = create(lin, WRITE)
+   if (fd == ERR)
+      dowrit = ERR
+   else {
+      for (line = from; line <= to; line = line + 1) {
+         k = gettxt(line)
+         call putlin(txt, fd)
+         }
+      call close(fd)
+      if (print == YES)
+          {
+          call putdec (to-from+1, 1)
+          call putc (NEWLINE)
+          }
+      dowrit = OK
+      ifmod = NO        # reset changes since last w flags
+      notify = NO
+      }
+   return
+   end
+#-t-  dowrit                      786  local   12/01/80  16:35:29
+#-h-  ended                       124  local   12/01/80  16:35:30
+ subroutine ended
+
+ integer i
+
+ include ctbufs
+
+ for (i=1; i <= MAXTBUFS; i=i+1)
+    call remove(edtbuf(1,i))
+
+ return
+ end
+#-t-  ended                       124  local   12/01/80  16:35:30
+#-h-  getb                        644  local   12/01/80  16:35:30
+  ## getb - retrieve 'value' of 'type' in buf(index)
+
+  subroutine getb (index, type, value)
+
+  integer index, type
+  integer value(2)
+  include cbuf
+
+                        # one word holds PREV and MARK
+ if(type == PREV)          #this word also holds MARK (in the sign bit)
+        value(1) = iabs(buf(index))
+  else if (type == NEXT)
+        value(1) = buf(index+1)
+  else if (type == MARK)
+        {
+        if (buf(index) < 0)
+                value(1) = YES
+        else
+                value(1) = NO
+        }
+  else if (type == SEEKADR)
+        {
+        value(1) = buf(index+2)
+        value(2) = buf(index+3)
+        }
+
+ return
+ end
+#-t-  getb                        644  local   12/01/80  16:35:30
+#-h-  getfn                       706  local   12/01/80  16:35:31
+  ## getfn - get file name from lin(i)
+   integer function getfn(lin, i, file)
+   character lin(MAXLINE), file(MAXLINE)
+   integer i, j, k
+   include cfile
+
+   getfn = ERR
+   if (lin(i + 1) == BLANK) {
+      j = i + 2      # get new file name
+      call skipbl(lin, j)
+      for (k = 1; lin(j) != NEWLINE; k = k + 1) {
+         file(k) = lin(j)
+         j = j + 1
+         }
+      file(k) = EOS
+      if (k > 1)
+         getfn = OK
+      }
+   else if (lin(i + 1) == NEWLINE & savfil(1) != EOS) {
+      call scopy(savfil, 1, file, 1)   # or old name
+      getfn = OK
+      }
+   # else error
+   if (getfn == OK & savfil(1) == EOS)
+      call scopy(file, 1, savfil, 1)   # save if no old one
+   return
+   end
+#-t-  getfn                       706  local   12/01/80  16:35:31
+#-h-  getind                      750  local   12/01/80  16:35:31
+  ## getind - locate line index in buffer
+   integer function getind(line)
+ integer line, k, j
+ integer nextln, prevln
+ include clines
+
+ if (oldndx != ERR & line == nextln(oldlin))
+                call getb(oldndx, NEXT, k)
+ else if (oldndx != ERR & line == oldlin)
+                k = oldndx
+ else if (oldndx != ERR & line == prevln(oldlin))
+                call getb(oldndx, PREV, k)
+ else
+        {
+         k = LINE0
+         if (line < lastln/2)
+                for (j=0; j<line; j=j+1)        #search forward
+                        call getb (k, NEXT, k)
+         else
+                for (j=lastln; j>=line; j=j-1)  #search backwards
+                        call getb(k, PREV, k)
+        }
+ oldlin = line
+ oldndx = k
+ getind = k
+ return
+ end
+#-t-  getind                      750  local   12/01/80  16:35:31
+#-h-  getlst                      645  local   12/01/80  16:35:31
+  ## getlst - collect line numbers at lin(i), increment i
+   integer function getlst(lin, i, status)
+   character lin(MAXLINE)
+   integer getone
+   integer i, num, status
+   include clines
+
+   line2 = 0
+   for (nlines = 0; getone(lin, i, num, status) == OK; ) {
+      line1 = line2
+      line2 = num
+      nlines = nlines + 1
+      if (lin(i) != COMMA & lin(i) != SEMICOL)
+         break
+      if (lin(i) == SEMICOL)
+         curln = num
+      i = i + 1
+      }
+   nlines = min(nlines, 2)
+   if (nlines == 0)
+      line2 = curln
+   if (nlines <= 1)
+      line1 = line2
+   if (status != ERR)
+      status = OK
+   getlst = status
+   return
+   end
+#-t-  getlst                      645  local   12/01/80  16:35:31
+#-h-  getnum                     1197  local   12/01/80  16:35:46
+  ## getnum - convert one term to line number
+   integer function getnum(lin, i, pnum, status)
+   character lin(MAXLINE)
+   integer ctoi, index, optpat, ptscan
+   integer i, pnum, status
+   include clines
+   include cpat
+#   string digits '0123456789'
+   character digits(11)
+   data digits(01)/DIG0/
+   data digits(02)/DIG1/
+   data digits(03)/DIG2/
+   data digits(04)/DIG3/
+   data digits(05)/DIG4/
+   data digits(06)/DIG5/
+   data digits(07)/DIG6/
+   data digits(08)/DIG7/
+   data digits(09)/DIG8/
+   data digits(10)/DIG9/
+   data digits(11)/EOS/
+
+   getnum = OK
+   if (index(digits, lin(i)) > 0) {
+      pnum = ctoi(lin, i)
+      i = i - 1   # move back; to be advanced at the end
+      }
+   else if (lin(i) == CURLINE)
+      pnum = curln
+   else if (lin(i) == LASTLINE)
+      pnum = lastln
+   else if (lin(i) == SCAN | lin(i) == BACKSCAN) {
+      if (optpat(lin, i) == ERR)   # build the pattern
+         getnum = ERR
+      else if (lin(i) == SCAN)
+         getnum = ptscan(FORWARD, pnum)
+      else
+         getnum = ptscan(BACKWARD, pnum)
+      }
+   else
+      getnum = EOF
+   if (getnum == OK)
+      i = i + 1   # point at next character to be examined
+   status = getnum
+   return
+   end
+#-t-  getnum                     1197  local   12/01/80  16:35:46
+#-h-  getone                      988  local   12/01/80  16:35:47
+  ## getone - evaluate one line number expression
+   integer function getone(lin, i, num, status)
+   character lin(MAXLINE)
+   integer getnum
+   integer i, istart, mul, num, pnum, status
+   include clines
+
+   istart = i
+   num = 0
+   call skipbl(lin, i)
+   if (getnum(lin, i, num, status) == OK)   # first term
+      repeat {            # + or - terms
+         call skipbl(lin, i)
+         if (lin(i) != PLUS & lin(i) != MINUS) {
+            status = EOF
+            break
+            }
+         if (lin(i) == PLUS)
+            mul = +1
+         else
+            mul = -1
+         i = i + 1
+         call skipbl(lin, i)
+         if (getnum(lin, i, pnum, status) == OK)
+            num = num + mul * pnum
+         if (status == EOF)
+            status = ERR
+         } until (status != OK)
+   if (num < 0 | num > lastln)
+      status = ERR
+
+   if (status == ERR)
+      getone = ERR
+   else if (i <= istart)
+      getone = EOF
+   else
+      getone = OK
+
+   status = getone
+   return
+   end
+#-t-  getone                      988  local   12/01/80  16:35:47
+#-h-  getrhs                      500  local   12/01/80  16:35:48
+  ## getrhs - get substitution string for 's' command
+   integer function getrhs(lin, i, sub, gflag)
+   character lin(MAXLINE), sub(MAXPAT)
+   integer maksub
+   integer gflag, i
+   character clower
+
+   getrhs = ERR
+   if (lin(i) == EOS)
+      return
+   if (lin(i + 1) == EOS)
+      return
+   i = maksub(lin, i + 1, lin(i), sub)
+   if (i == ERR)
+      return
+   if (clower(lin(i+1)) == GLOBAL)
+      {
+      i = i + 1
+      gflag = YES
+      }
+   else
+      gflag = NO
+   getrhs = OK
+   return
+   end
+#-t-  getrhs                      500  local   12/01/80  16:35:48
+#-h-  gettxt                      620  local   12/01/80  16:35:48
+  ## gettxt - locate text for line, copy to txt
+    integer function gettxt(line)
+    character null(1)
+    integer getind, getlin
+ #  integer readf
+    integer line, len, j, k, dummy
+    integer loc(2)
+    include cbuf
+    include cscrat
+    include ctxt
+
+    data null/EOS/
+
+    k = getind(line)
+    if (line != 0)
+        {
+        call getb (k, SEEKADR, loc)
+        call seek (loc, scr)
+        dummy = getlin (txt, scr)
+ #     if random I/O not available with seek/note, use 'readf'
+ #      dummy = readf (txt, MAXLINE, scr)
+        }
+    else
+        call scopy(null, 1, txt, 1)
+    gettxt = k
+    return
+    end
+#-t-  gettxt                      620  local   12/01/80  16:35:48
+#-h-  gtfndx                      339  local   12/01/80  16:35:49
+ integer function gtfndx(newind)
+
+ include cbuf
+
+ if (free != 0)         # something in free list
+    {
+    newind = free
+    call getb(free, NEXT, free)         # relink free list
+    }
+ else if (lastbf + BUFENT <= MAXBUF)
+    {
+    newind = lastbf
+    lastbf = lastbf + BUFENT
+    }
+ else
+    newind = ERR
+ gtfndx = newind
+
+ return
+ end
+#-t-  gtfndx                      339  local   12/01/80  16:35:49
+#-h-  inited                      485  local   12/01/80  16:35:49
+ ## inited - set up temporary buffers (for $1, $2, etc.)
+ subroutine inited
+
+ character num(2), edt(4), defn(3)
+ integer i, j, junk, itoc
+
+ include ctbufs
+
+ data edt(1), edt(2), edt(3), edt(4) /LETE, LETD, LETT, EOS/
+ data defn(1), defn(2), defn(3) /DOLLAR, BLANK, EOS/
+
+ for (j=1; j <= MAXTBUFS; j=j+1)
+    {
+    i = j - 1
+    junk = itoc(i, num, 2)
+    edt(3) = num(1)
+    call mkuniq(edt, edtbuf(1,j))
+    defn(2) = num(1)
+    call scopy(defn, 1, bufid(1,j), 1)
+    }
+
+ return
+ end
+#-t-  inited                      485  local   12/01/80  16:35:49
+#-h-  inject                      562  local   12/01/80  16:35:50
+  ## inject - insert lin after curln, write scratch
+    integer function inject(lin)
+    character lin(MAXLINE)
+    integer getind, maklin, nextln
+    integer i, k1, k2, k3
+    include clines
+
+    for (i = 1; lin(i) != EOS; ) {
+       i = maklin(lin, i, k3)
+       if (i == ERR) {
+          inject = ERR
+          break
+          }
+       k1 = getind(curln)
+       k2 = getind(nextln(curln))
+       call relink(k1, k3, k3, k2)
+       call relink(k3, k2, k1, k3)
+       curln = curln + 1
+       lastln = lastln + 1
+       inject = OK
+        }
+    return
+    end
+#-t-  inject                      562  local   12/01/80  16:35:50
+#-h-  kopy                        417  local   12/01/80  16:35:50
+ integer function kopy(line3)
+
+ integer line3, nline, junk, gettxt, inject
+
+ include clines
+ include ctxt
+
+ if (line1 <= 0 | (line1 <= line3 & line3 <= line2))
+    kopy = ERR
+ else
+    {
+    kopy = OK
+    curln = line3
+    for (nline = line1; nline <= line2; nline = nline + 1)
+        {
+        junk = gettxt(nline)
+        kopy = inject(txt)
+        if (kopy == ERR)
+            break
+        }
+    }
+
+ return
+ end
+#-t-  kopy                        417  local   12/01/80  16:35:50
+#-h-  lmove                       812  local   12/01/80  16:35:51
+  ## lmove - move line1 through line2 after line 3
+   integer function lmove(line3)
+   integer getind, nextln, prevln
+   integer k0, k1, k2, k3, k4, k5, line3, delta
+   include clines
+
+   if (line1 <= 0 | (line1 <= line3 & line3 <= line2))
+      lmove = ERR
+   else {
+      k0 = getind(prevln(line1))
+      k3 = getind(nextln(line2))
+      k1 = getind(line1)
+      k2 = getind(line2)
+      call relink(k0, k3, k0, k3)
+      delta = line2 - line1 + 1
+      lastln = lastln - delta
+      if (line3 > line1) {
+         curln = line3
+         line3 = line3 - delta
+         }
+      else
+         curln = line3 + delta
+      k4 = getind(line3)
+      k5 = getind(nextln(line3))
+      call relink(k4, k1, k2, k5)
+      call relink(k2, k5, k4, k1)
+      lastln = lastln + delta
+      lmove = OK
+      }
+   return
+   end
+#-t-  lmove                       812  local   12/01/80  16:35:51
+#-h-  look4                       393  local   12/01/80  16:35:51
+ ## look4 - look for filename associated with buffer id
+ integer function look4 (id, name)
+ character id(ARB), name(ARB)
+ integer i
+ integer equal
+ include ctbufs
+
+ for (i=1; i<=MAXTBUFS; i=i+1)
+        {
+        if (equal (id, bufid(1,i)) == YES)
+                {
+                call scopy(edtbuf(1,i), 1, name, 1)
+                return(YES)
+                }
+        }
+ return(NO)
+ end
+
+
+#-t-  look4                       393  local   12/01/80  16:35:51
+#-h-  maklin                     1278  local   12/01/80  16:35:53
+  ## maklin - make new line entry, copy text to scratch
+    integer function maklin(lin, i, newind)
+
+    character lin(MAXLINE)
+    integer addset, gtfndx, writef
+ #  integer writef, length, len
+    integer i, j, junk, newind, txtend
+    include cbuf
+    include cscrat
+    include ctxt
+    include clines
+
+    maklin = ERR
+    oldndx = ERR
+    if (gtfndx(newind) == ERR)
+       {              # no room for new line entry
+       call remark ('File size exceeded.')
+       return
+       }
+    txtend = 1
+    for (j = i; lin(j) != EOS; ) {
+       junk = addset(lin(j), txt, txtend, MAXLINE)
+       j = j + 1
+       if (lin(j - 1) == NEWLINE)
+          break
+       }
+    if (addset(EOS, txt, txtend, MAXLINE) == NO)
+        {
+        call ptfndx(newind, newind)     # return free index block
+       return
+        }
+    call setb (newind, SEEKADR, scrend)
+    call seek (scrend, scr)
+    ifnotdef(NO_READWRITE,
+        call putlin (txt, scr)
+            )
+    ifdef(NO_READWRITE,
+        call putlin (txt, wscr)
+        )
+ #  if putlin not available with seek/note, use 'writef'
+ #  len = length (txt)
+ #  junk = writef (txt, len, (w)scr)
+    call note(scrend,scr)
+    call setb (newind, MARK, NO)
+    maklin = j         # next character to be examined in lin
+    return
+    end
+#-t-  maklin                     1278  local   12/01/80  16:35:53
+#-h-  nextln                      183  local   12/01/80  16:35:54
+  ## nextln - get line after 'line'
+   integer function nextln(line)
+   integer line
+   include clines
+
+   nextln = line + 1
+   if (nextln > lastln)
+      nextln = 0
+   return
+   end
+#-t-  nextln                      183  local   12/01/80  16:35:54
+#-h-  optpat                      546  local   12/01/80  16:35:54
+  ## optpat - make pattern if specified at lin(i)
+   integer function optpat(lin, i)
+   character lin(MAXLINE)
+   integer makpat
+   integer i
+   include cpat
+
+   if (lin(i) == EOS)
+      i = ERR
+   else if (lin(i + 1) == EOS)
+      i = ERR
+   else if (lin(i + 1) == lin(i))   # repeated delimiter
+      i = i + 1         # leave existing pattern alone
+   else
+      i = makpat(lin, i + 1, lin(i), pat)
+   if (pat(1) == EOS)
+      i = ERR
+   if (i == ERR) {
+      pat(1) = EOS
+      optpat = ERR
+      }
+   else
+      optpat = OK
+   return
+   end
+#-t-  optpat                      546  local   12/01/80  16:35:54
+#-h-  prevln                      184  local   12/01/80  16:35:55
+  ## prevln - get line before 'line'
+   integer function prevln(line)
+   integer line
+   include clines
+
+   prevln = line - 1
+   if (prevln < 0)
+      prevln = lastln
+   return
+   end
+#-t-  prevln                      184  local   12/01/80  16:35:55
+#-h-  ptfndx                      127  local   12/01/80  16:35:55
+ subroutine ptfndx(start, stop)
+
+ integer start, stop
+
+ include cbuf
+
+ call setb(stop, NEXT, free)
+ free = start
+
+ return
+ end
+#-t-  ptfndx                      127  local   12/01/80  16:35:55
+#-h-  ptscan                      488  local   12/01/80  16:35:55
+  ## ptscan - scan for next occurrence of pattern
+   integer function ptscan(way, num)
+   integer gettxt, match, nextln, prevln
+   integer k, num, way
+   include clines
+   include cpat
+   include ctxt
+
+   num = curln
+   repeat {
+      if (way == FORWARD)
+         num = nextln(num)
+      else
+         num = prevln(num)
+      k = gettxt(num)
+      if (match(txt, pat) == YES) {
+         ptscan = OK
+         return
+         }
+      } until (num == curln)
+   ptscan = ERR
+   return
+   end
+#-t-  ptscan                      488  local   12/01/80  16:35:55
+#-h-  relink                      216  local   12/01/80  16:35:56
+  ## relink - rewrite two half line links
+   subroutine relink(a, x, y, b)
+   integer a, b, x, y
+   include clines
+
+   oldndx = ERR
+   call setb (x, PREV, a)
+   call setb (y, NEXT, b)
+   ifmod = YES
+   return
+   end
+#-t-  relink                      216  local   12/01/80  16:35:56
+#-h-  setb                        687  local   12/01/80  16:35:56
+  ## setb - Set 'type' in buf(index) to 'value'
+
+  subroutine setb (index, type, value)
+
+  integer index, type
+  integer value(2)
+  include cbuf
+
+ if (type == PREV)      #the leftmost bit of this word holds MARK
+        {
+        if (buf(index) < 0)
+                buf(index) = -value(1)
+        else
+                buf(index) = value(1)
+        }
+ else if (type == NEXT)
+   buf(index+1) = value(1)
+ else if (type == MARK)
+        {
+        if (value(1) == YES)
+                buf(index) = -iabs(buf(index))
+        else
+                buf(index) = iabs(buf(index))
+        }
+ else if (type == SEEKADR)
+   {
+   buf(index+2) = value(1)
+   buf(index+3) = value(2)
+   }
+
+  return
+  end
+#-t-  setb                        687  local   12/01/80  16:35:56
+#-h-  setbuf                     1062  local   12/01/80  16:35:57
+  ## setbuf - create scratch file, set up line 0
+   subroutine setbuf
+
+   integer create, open
+   integer k, j
+   include cbuf
+   include clines
+   include cscrat
+    string null ''
+    string fil "eds"
+
+
+   call mkuniq(fil, scrfil)     #get unique name for scratch file
+    ifnotdef(NO_READWRITE,
+             scr = create(scrfil, READWRITE) )
+    ifdef(NO_READWRITE,
+             scr = create(scrfile, READ)
+             wscr = create(scrfile, WRITE)
+             if (wscr == ERR)
+                call cant(scrfil)
+             )
+    if (scr == ERR)
+        call cant(scrfil)
+
+                                #pick up current location of file
+                                # (better be at the beginning)
+   call note(scrend,scr)
+   lastbf = LINE0
+   free = 0                     # initialize free list
+   call maklin(null, 1, k)   # create empty line 0
+   call relink(k, k, k, k)      # establish initial linked list
+   curln = 0
+   lastln = 0
+   cursav = 0
+   ifmod = NO           # initialize changes since last w variables
+   notify = NO
+   return
+   end
+#-t-  setbuf                     1062  local   12/01/80  16:35:57
+#-h-  subst                      1512  local   12/01/80  16:35:57
+  ## subst - substitute "sub" for occurrences of pattern
+   integer function subst(sub, gflag)
+   character new(MAXLINE), sub(MAXPAT)
+   integer addset, amatch, gettxt, inject, conct
+   integer gflag, j, junk, k, lastm, line, m, status, subbed,
+      tagbeg (10), tagend (10)
+   include clines
+   include cpat
+   include ctxt
+
+   subst = ERR
+   if (line1 <= 0)
+      return
+   for (line = line1; line <= line2; line = line + 1) {
+      j = 1
+      subbed = NO
+      junk = gettxt(line)
+      lastm = 0
+      for (k = 1; txt(k) != EOS; ) {
+         if (gflag == YES | subbed == NO)
+            m = amatch(txt, k, pat, tagbeg, tagend)
+         else
+            m = 0
+         if (m > 0 & lastm != m) {   # replace matched text
+            subbed = YES
+            call catsub(txt, tagbeg, tagend, sub, new, j, MAXLINE)
+            lastm = m
+            }
+         if (m == 0 | m == k) {   # no match or null match
+            junk = addset(txt(k), new, j, MAXLINE)
+            k = k + 1
+            }
+         else            # skip matched text
+            k = m
+         }
+      if (subbed == YES) {
+         if (addset(EOS, new, j, MAXLINE) == NO) {
+            subst = ERR
+            break
+            }
+         subst = conct(line, new)          #check for concatenation
+         if (subst == ERR)
+               break
+         call delete(line, line, status)   # remembers dot
+         subst = inject(new)
+         if (subst == ERR)
+            break
+         subst = OK
+         }
+      }
+   return
+   end
+#-t-  subst                      1512  local   12/01/80  16:35:57
+#-t-  ed.r                      37153  local   12/01/80  16:45:37
+#-t-  ed                        58250  local   01/09/81  00:33:09

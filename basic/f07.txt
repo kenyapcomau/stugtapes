@@ -1,0 +1,204 @@
+#-h-  includ.doc         1389  local  09/12/80  17:18:03
+.bp 1
+.in 0
+.he 'INCLUD (1)'2/2/78'INCLUD (1)'
+.sp 2
+.in +3
+.fi
+.ti -3
+NAME
+.br
+includ - file inclusion preprocessor
+.nf
+.sp
+.ti -3
+SYNOPSIS
+.br
+includ [file] ...
+.fi
+.sp
+.ti -3
+DESCRIPTION
+.br
+Includ copies the named files to the standard output, except that any
+line that begins with
+
+               include file
+.br
+or
+.br
+               include "file"
+
+is replaced by the entire contents
+of file.
+If no files are given, or '-' is specified, includ reads its standard
+input.
+
+An included file may contain further includes.
+However,
+there is a (system-dependent) limit to the nesting of included files.
+.fi
+.sp
+.ti -3
+FILES
+.br
+None
+.sp
+.ti -3
+SEE ALSO
+.br
+Kernighan and Plauger's "Software Tools", pages 74-77
+.br
+Ratfor
+.sp
+.ne 2
+.ti -3
+DIAGNOSTICS
+.br
+includes nested too deeply
+.br
+.in +3
+The depth of included files allowed was exceeded.
+The depth is set by the NFILES definitions in the source code
+and is dependent upon the maximum number of opened files allowed
+on the particular system.
+.in -3
+.sp
+name: can't include
+.br
+.in +3
+The named file could not be opened; processing continues.
+.in -3
+.sp
+.ti -3
+AUTHORS
+.br
+Original code by Kernighan and Plauger, with modifications by
+David Hanson and friends (U. of Arizona)
+.sp
+.ti -3
+BUGS/DEFICIENCIES
+.br
+The depth of included files allowed is dependent upon the number
+of open files allowed by the implementor of the primitives.
+#-t-  includ.doc         1389  local  09/12/80  17:18:03
+#-h-  defns          163  local  09/12/80  17:18:03
+   # include ratdef
+
+   define(NFILES,arith(MAXOFILES,-,4))
+                        #(should be set to max nbr opened files
+                        # allowed - 4)
+#-t-  defns          163  local  09/12/80  17:18:03
+#-h-  includ          636  local  09/12/80  17:18:03
+# includ-concatenate args and replace include file by contents of file
+
+   DRIVER(includ)
+
+   character name (MAXLINE)
+
+   integer i
+   integer getarg, equal
+
+   filedes f
+   filedes open
+
+   string dash "-"
+
+   call query ("usage:  includ [files].")
+
+   for (i = 1; getarg (i, name, MAXLINE) != EOF; i = i + 1) {
+      if (equal (name, dash) == YES) {
+         call incl (STDIN)
+         next
+         }
+      f = open (name, READ)
+      if (f == ERR)
+         call cant (name)
+      else {
+         call incl (f)
+         call close (f)
+         }
+      }
+   if (i == 1)  # read from STDIN
+      call incl (STDIN)
+
+   DRETURN
+   end
+#-t-  includ          636  local  09/12/80  17:18:03
+#-h-  incl         1135  local  09/12/80  17:18:04
+# incl - copy f to STDOUT, replacing  include file by contents of file
+
+   subroutine incl (f)
+   filedes f
+
+   character line (MAXLINE), str (MAXLINE)
+
+   integer equal, getlin, getqw, getwrd
+   integer len, level, loc, i
+
+   filedes infile (NFILES)
+   filedes open
+
+   string incld "include"
+   string bincld "INCLUDE"
+
+   infile (1) = f
+   for (level = 1; level > 0; level = level - 1) {
+      while (getlin (line, infile (level)) != EOF) {
+         loc = 1
+         len = getwrd (line, loc, str)
+         if ((equal (str, incld) == NO) &
+             (equal (str, bincld) == NO))
+            call putlin (line, STDOUT)
+         else {
+            level = level + 1
+            if (level > NFILES)
+               call error ("includes nested too deeply.")
+            len = getqw (line, loc, str)
+            infile (level) = open (str, READ)
+            if (infile (level) == ERR) {
+               call putlin (str, ERROUT)
+               call remark (": can't include.")
+               level = level - 1
+               }
+            }
+         }
+      if (level > 1)
+         call close (infile (level))
+      }
+
+   return
+   end
+#-t-  incl         1135  local  09/12/80  17:18:04
+#-h-  getqw          643  local  09/12/80  17:18:04
+# getqw - get word or quoted word from in (i) into out; increment i
+
+   integer function getqw (in, i, out)
+   character in (ARB), out (ARB)
+   integer i
+
+   integer j
+   integer getwrd
+
+   character quote
+
+   while (in (i) == BLANK | in (i) == TAB)
+      i = i + 1
+   if (in (i) == SQUOTE | in (i) == DQUOTE) {
+      quote = in (i)
+      j = 1
+      for (i = i + 1; in (i) != quote & in (i) != EOS; i = i + 1) {
+         out (j) = in (i)
+         j = j + 1
+         }
+      out (j) = EOS
+      getqw = j - 1
+      if (in (i) == quote)  # skip the final quote
+         i = i + 1
+      }
+   else
+      getqw = getwrd (in, i, out)
+
+ return
+ end
+#-t-  getqw          643  local  09/12/80  17:18:04
